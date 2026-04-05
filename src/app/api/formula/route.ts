@@ -7,7 +7,7 @@ import { requireAuth } from '@/lib/session'
 const updateSchema = z.object({
   mode:      z.enum(['weighted', 'category']).optional(),
   normalise: z.number().int().min(1).max(100).optional(),
-  config:    z.record(z.unknown()).optional(),
+  config:    z.record(z.any()).optional(),
 })
 
 export async function GET() {
@@ -28,7 +28,7 @@ export async function PATCH(req: NextRequest) {
 
     const formula = await prisma.formula.upsert({
       where: { userId },
-      update: data,
+      update: { mode: data.mode, normalise: data.normalise },
       create: { userId, mode: 'weighted', normalise: 100, config: {}, ...data },
     })
     return NextResponse.json({ data: formula })
