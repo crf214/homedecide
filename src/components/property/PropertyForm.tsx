@@ -2,6 +2,11 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
+interface ListingLink {
+  label: string
+  url: string
+}
+
 interface Props {
   property?: {
     id: string
@@ -11,6 +16,8 @@ interface Props {
     price?: number | null
     currency: string
     listingUrl?: string | null
+    mapsUrl?: string | null
+    listingLinks?: ListingLink[] | null
     tenure?: string | null
     epc?: string | null
     notes?: string | null
@@ -100,9 +107,13 @@ export default function PropertyForm({ property }: Props) {
   const [address, setAddress] = useState(property?.address ?? '')
   const [street, setStreet] = useState(property?.street ?? '')
   const [postcode, setPostcode] = useState(property?.postcode ?? '')
+  const [mapsUrl, setMapsUrl] = useState(property?.mapsUrl ?? '')
   const [price, setPrice] = useState(property?.price?.toString() ?? '')
   const [currency, setCurrency] = useState(property?.currency ?? 'GBP')
-  const [listingUrl, setListingUrl] = useState(property?.listingUrl ?? '')
+  const [listingUrl] = useState(property?.listingUrl ?? '')
+  const [listingLinks, setListingLinks] = useState<ListingLink[]>(
+    property?.listingLinks ?? []
+  )
   const [tenure, setTenure] = useState(property?.tenure ?? 'Freehold')
   const [epc, setEpc] = useState(property?.epc ?? 'C')
   const [notes, setNotes] = useState(property?.notes ?? '')
@@ -155,6 +166,8 @@ export default function PropertyForm({ property }: Props) {
         price: price ? parseFloat(price) : null,
         currency,
         listingUrl: listingUrl.trim() || null,
+        mapsUrl: mapsUrl.trim() || null,
+        listingLinks: listingLinks.filter(l => l.url.trim()),
         tenure: tenure || null,
         epc: epc || null,
         notes: notes.trim() || null,
@@ -239,6 +252,11 @@ export default function PropertyForm({ property }: Props) {
           </div>
         </div>
       </div>
+      <div className="mt-3">
+        <label style={lSty}>Google Maps link</label>
+        <input type="url" value={mapsUrl} onChange={e => setMapsUrl(e.target.value)}
+          className={iCls} style={iSty} placeholder="Paste a Google Maps share link" />
+      </div>
 
       <div style={sSty}>
         <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--ink)' }}>Price & tenure</h3>
@@ -268,9 +286,44 @@ export default function PropertyForm({ property }: Props) {
           </div>
         </div>
         <div className="mt-3">
-          <label style={lSty}>Listing URL</label>
-          <input type="url" value={listingUrl} onChange={e => setListingUrl(e.target.value)}
-            className={iCls} style={iSty} placeholder="https://www.rightmove.co.uk/properties/..." />
+          <div className="flex items-center justify-between" style={{ marginTop: 10, marginBottom: 4 }}>
+            <label style={{ ...lSty, marginTop: 0, marginBottom: 0 }}>Listing links</label>
+            <button
+              type="button"
+              onClick={() => setListingLinks(prev => [...prev, { label: '', url: '' }])}
+              className="text-xs px-3 py-1 rounded-lg"
+              style={{ border: '1px solid var(--border)', color: 'var(--muted)', background: 'var(--surface)' }}>
+              + Add link
+            </button>
+          </div>
+          {listingLinks.length === 0 && (
+            <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>No listing links added yet.</p>
+          )}
+          {listingLinks.map((link, i) => (
+            <div key={i} className="flex gap-2 mt-2">
+              <input
+                type="text"
+                value={link.label}
+                onChange={e => setListingLinks(prev => prev.map((l, j) => j === i ? { ...l, label: e.target.value } : l))}
+                className={iCls}
+                style={{ ...iSty, flex: '0 0 160px' }}
+                placeholder="e.g. Rightmove" />
+              <input
+                type="url"
+                value={link.url}
+                onChange={e => setListingLinks(prev => prev.map((l, j) => j === i ? { ...l, url: e.target.value } : l))}
+                className={iCls}
+                style={{ ...iSty, flex: 1 }}
+                placeholder="https://..." />
+              <button
+                type="button"
+                onClick={() => setListingLinks(prev => prev.filter((_, j) => j !== i))}
+                className="px-3 rounded-xl text-sm flex-shrink-0"
+                style={{ border: '1px solid var(--border)', color: 'var(--muted)', background: 'var(--surface)' }}>
+                ×
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 

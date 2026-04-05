@@ -6,6 +6,7 @@ import { calcScore, scoreBg, CURRENCY_SYMBOLS } from '@/lib/scoring'
 import Link from 'next/link'
 import EvaluatePanel from '@/components/property/EvaluatePanel'
 import SharePanel from '@/components/property/SharePanel'
+import DocumentsPanel from '@/components/property/DocumentsPanel'
 
 export default async function PropertyPage({ params }: { params: { id: string } }) {
   const session = await getSession()
@@ -32,6 +33,16 @@ export default async function PropertyPage({ params }: { params: { id: string } 
   const breakdown = calcScore(criteria as any, existingRatings as any, f as any, userId)
   const sym = CURRENCY_SYMBOLS[property.currency] ?? '£'
 
+  const listingLinks = (Array.isArray(property.listingLinks) ? property.listingLinks : []) as { label: string; url: string }[]
+
+  function buildEmbedUrl(url: string): string {
+    const coordMatch = url.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/)
+    if (coordMatch) {
+      return `https://maps.google.com/maps?q=${coordMatch[1]},${coordMatch[2]}&output=embed`
+    }
+    return `https://maps.google.com/maps?q=${encodeURIComponent(url)}&output=embed`
+  }
+
   return (
     <div className="p-8 max-w-5xl fade-up">
       <div className="flex items-start gap-6 mb-8 flex-wrap">
@@ -56,13 +67,21 @@ export default async function PropertyPage({ params }: { params: { id: string } 
                 {m}
               </span>
             ))}
-            {property.listingUrl && (
-              <a href={property.listingUrl} target="_blank" rel="noopener noreferrer"
-                className="text-sm underline" style={{ color: 'var(--blue-text)' }}>
-                View listing ↗
-              </a>
-            )}
           </div>
+          {listingLinks.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap mt-2">
+              {listingLinks.map((link, i) => (
+                <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-medium"
+                  style={{ background: 'var(--blue-soft)', color: 'var(--blue-text)', border: '1px solid transparent' }}>
+                  {link.label || link.url}
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                    <path d="M1.5 8.5L8.5 1.5M8.5 1.5H3.5M8.5 1.5V6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </a>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
@@ -94,6 +113,24 @@ export default async function PropertyPage({ params }: { params: { id: string } 
               className="h-48 w-auto flex-shrink-0 rounded-2xl object-cover"
               style={{ border: '1px solid var(--border)' }} />
           ))}
+        </div>
+      )}
+
+      {property.mapsUrl && (
+        <div className="mb-8">
+          <a href={property.mapsUrl} target="_blank" rel="noopener noreferrer"
+            className="text-sm underline mb-3 inline-block" style={{ color: 'var(--blue-text)' }}>
+            View on map ↗
+          </a>
+          <iframe
+            src={buildEmbedUrl(property.mapsUrl)}
+            width="100%"
+            height="300"
+            title="Property location"
+            style={{ border: 'none', borderRadius: 12, display: 'block' }}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
         </div>
       )}
 
@@ -194,6 +231,8 @@ export default async function PropertyPage({ params }: { params: { id: string } 
         formula={f as any}
         userId={userId}
       />
+
+      <DocumentsPanel propertyId={params.id} />
 
       {isOwner && (
         <div className="mt-8">

@@ -22,6 +22,7 @@ model User {
   formula       Formula?
   sharedFrom    PropertyShare[] @relation("SharedBy")
   sharedTo      PropertyShare[] @relation("SharedWith")
+  documents     PropertyDocument[]
 
   @@map("users")
 }
@@ -59,11 +60,15 @@ model Property {
   gardenType        String?
   gardenMaintenance String?
 
+  mapsUrl     String?
+  listingLinks Json     @default("[]")
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   ratings     Rating[]
   shares      PropertyShare[]
+  documents   PropertyDocument[]
 
   @@map("properties")
 }
@@ -137,4 +142,19 @@ model PropertyShare {
 
   @@unique([propertyId, sharedWithId])
   @@map("property_shares")
+}
+
+model PropertyDocument {
+  id          String   @id @default(cuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  filename    String
+  fileUrl     String
+  fileSize    Int?
+  uploadedAt  DateTime @default(now())
+
+  @@map("property_documents")
 }

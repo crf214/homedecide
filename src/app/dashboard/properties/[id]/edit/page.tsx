@@ -22,11 +22,13 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
       </div>
       <PropertyForm property={{
         ...property,
-        price:      property.price ?? undefined,
-        listingUrl: property.listingUrl ?? undefined,
-        tenure:     property.tenure ?? undefined,
-        epc:        property.epc ?? undefined,
-        notes:      property.notes ?? undefined,
+        price:        property.price ?? undefined,
+        listingUrl:   property.listingUrl ?? undefined,
+        mapsUrl:      property.mapsUrl ?? undefined,
+        listingLinks: (Array.isArray(property.listingLinks) ? property.listingLinks : []) as { label: string; url: string }[],
+        tenure:       property.tenure ?? undefined,
+        epc:          property.epc ?? undefined,
+        notes:        property.notes ?? undefined,
       }} />
     </div>
   )

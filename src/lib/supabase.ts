@@ -6,6 +6,11 @@ export const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
+export const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_KEY!
+)
+
 const BUCKET = process.env.SUPABASE_STORAGE_BUCKET ?? 'property-photos'
 
 export async function uploadPhoto(
@@ -16,20 +21,55 @@ export async function uploadPhoto(
   const ext = file.name.split('.').pop() ?? 'jpg'
   const path = `${userId}/${propertyId}/${Date.now()}.${ext}`
 
-  const { error } = await supabase.storage
+  const arrayBuffer = await file.arrayBuffer()
+  const buffer = new Uint8Array(arrayBuffer)
+
+  const { error } = await supabaseAdmin.storage
     .from(BUCKET)
-    .upload(path, file, { upsert: false, contentType: file.type })
+    .upload(path, buffer, { upsert: false, contentType: file.type })
 
   if (error) throw new Error(`Upload failed: ${error.message}`)
 
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
+  const { data } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(path)
   return data.publicUrl
 }
 
 export async function deletePhoto(url: string): Promise<void> {
-  // Extract path from public URL
   const parts = url.split(`/storage/v1/object/public/${BUCKET}/`)
   if (parts.length < 2) return
   const path = parts[1]
-  await supabase.storage.from(BUCKET).remove([path])
+  await supabaseAdmin.storage.from(BUCKET).remove([path])
+}
+
+const DOC_BUCKET = 'property-documents'
+
+export async function uploadDocument(
+  file: File,
+  userId: string,
+  propertyId: string
+): Promise<string> {
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+  const path = `${userId}/${propertyId}/${Date.now()}-${safeName}`
+
+  const arrayBuffer = await file.arrayBuffer()
+  const buffer = new Uint8Array(arrayBuffer)
+
+  const { error } = await supabaseAdmin.storage
+    .from(DOC_BUCKET)
+    .upload(path, buffer, {
+      upsert: false,
+      contentType: file.type || 'application/octet-stream',
+    })
+
+  if (error) throw new Error(`Upload failed: ${error.message}`)
+
+  const { data } = supabaseAdmin.storage.from(DOC_BUCKET).getPublicUrl(path)
+  return data.publicUrl
+}
+
+export async function deleteDocument(url: string): Promise<void> {
+  const parts = url.split(`/storage/v1/object/public/${DOC_BUCKET}/`)
+  if (parts.length < 2) return
+  const path = parts[1]
+  await supabaseAdmin.storage.from(DOC_BUCKET).remove([path])
 }

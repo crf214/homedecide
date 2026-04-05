@@ -29,6 +29,8 @@ const createSchema = z.object({
   gardenPrivacy:      z.string().optional().nullable(),
   gardenType:         z.string().optional().nullable(),
   gardenMaintenance:  z.string().optional().nullable(),
+  mapsUrl:            z.string().optional().nullable(),
+  listingLinks:       z.array(z.object({ label: z.string(), url: z.string() })).default([]),
 })
 
 export async function GET() {
