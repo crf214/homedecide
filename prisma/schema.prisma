@@ -32,13 +32,32 @@ model Property {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   address     String
+  street      String?
+  postcode    String?
   price       Float?
   currency    String   @default("GBP")
   listingUrl  String?
   tenure      String?
   epc         String?
   notes       String?
-  photos      String[] // array of storage URLs
+  photos      String[]
+
+  internalArea      Float?
+  internalAreaUnit  String?  @default("sqft")
+
+  bedrooms      Int?
+  bathrooms     Int?
+  livingRooms   Int?
+  hasOffice     Boolean? @default(false)
+  hasGym        Boolean? @default(false)
+  hasBasement   Boolean? @default(false)
+
+  gardenSize        Float?
+  gardenSizeUnit    String?  @default("sqft")
+  gardenOrientation String?
+  gardenPrivacy     String?
+  gardenType        String?
+  gardenMaintenance String?
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -56,7 +75,7 @@ model Criterion {
 
   name        String
   category    String
-  ratingType  String   @default("num") // "num" | "star"
+  ratingType  String   @default("num")
   weight      Float    @default(1)
   description String?
   required    Boolean  @default(true)
@@ -95,7 +114,7 @@ model Formula {
   userId      String   @unique
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  mode        String   @default("weighted") // "weighted" | "category"
+  mode        String   @default("weighted")
   normalise   Int      @default(100)
   config      Json     @default("{}")
 
