@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  passwordHash  String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  properties    Property[]
+  criteria      Criterion[]
+  ratings       Rating[]
+  formula       Formula?
+  sharedFrom    PropertyShare[] @relation("SharedBy")
+  sharedTo      PropertyShare[] @relation("SharedWith")
+
+  @@map("users")
+}
+
+model Property {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  address     String
+  price       Float?
+  currency    String   @default("GBP")
+  listingUrl  String?
+  tenure      String?
+  epc         String?
+  notes       String?
+  photos      String[] // array of storage URLs
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ratings     Rating[]
+  shares      PropertyShare[]
+
+  @@map("properties")
+}
+
+model Criterion {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name        String
+  category    String
+  ratingType  String   @default("num") // "num" | "star"
+  weight      Float    @default(1)
+  description String?
+  required    Boolean  @default(true)
+  position    Int      @default(0)
+  isDefault   Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ratings     Rating[]
+
+  @@map("criteria")
+}
+
+model Rating {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  criterionId String
+  criterion   Criterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+
+  value       Float?
+  note        String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, propertyId, criterionId])
+  @@map("ratings")
+}
+
+model Formula {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  mode        String   @default("weighted") // "weighted" | "category"
+  normalise   Int      @default(100)
+  config      Json     @default("{}")
+
+  updatedAt   DateTime @updatedAt
+
+  @@map("formulas")
+}
+
+model PropertyShare {
+  id          String   @id @default(cuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  sharedById  String
+  sharedBy    User     @relation("SharedBy", fields: [sharedById], references: [id], onDelete: Cascade)
+  sharedWithId String
+  sharedWith  User     @relation("SharedWith", fields: [sharedWithId], references: [id], onDelete: Cascade)
+
+  canEdit     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@unique([propertyId, sharedWithId])
+  @@map("property_shares")
+}
