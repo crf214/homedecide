@@ -35,14 +35,6 @@ export default async function PropertyPage({ params }: { params: { id: string } 
 
   const listingLinks = (Array.isArray(property.listingLinks) ? property.listingLinks : []) as { label: string; url: string }[]
 
-  function buildEmbedUrl(url: string): string {
-    const coordMatch = url.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/)
-    if (coordMatch) {
-      return `https://maps.google.com/maps?q=${coordMatch[1]},${coordMatch[2]}&output=embed`
-    }
-    return `https://maps.google.com/maps?q=${encodeURIComponent(url)}&output=embed`
-  }
-
   return (
     <div className="p-8 max-w-5xl fade-up">
       <div className="flex items-start gap-6 mb-8 flex-wrap">
@@ -117,20 +109,12 @@ export default async function PropertyPage({ params }: { params: { id: string } 
       )}
 
       {property.mapsUrl && (
-        <div className="mb-8">
+        <div className="flex items-center gap-2 flex-wrap mb-8">
           <a href={property.mapsUrl} target="_blank" rel="noopener noreferrer"
-            className="text-sm underline mb-3 inline-block" style={{ color: 'var(--blue-text)' }}>
-            View on map ↗
+            className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-medium"
+            style={{ background: 'var(--blue-soft)', color: 'var(--blue-text)', border: '1px solid transparent' }}>
+            View on Google Maps ↗
           </a>
-          <iframe
-            src={buildEmbedUrl(property.mapsUrl)}
-            width="100%"
-            height="300"
-            title="Property location"
-            style={{ border: 'none', borderRadius: 12, display: 'block' }}
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-          />
         </div>
       )}
 
