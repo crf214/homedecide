@@ -137,11 +137,10 @@ function SortableRow({ criterion: c, onEdit }: { criterion: Criterion; onEdit: (
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }
 
   return (
-    <div ref={setNodeRef} style={style}
+    <div ref={setNodeRef}
       className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors"
-      style2={{ border: '1px solid var(--border)', background: '#fff' }}
-      {...{ style: { ...style, border: '1px solid var(--border)', background: '#fff', borderRadius: 12 } }}>
-      {/* Drag handle */}
+      style={{ ...style, border: '1px solid var(--border)', background: '#fff', borderRadius: 12 }}>
+     {/* Drag handle */}
       <button {...attributes} {...listeners}
         className="cursor-grab active:cursor-grabbing text-lg flex-shrink-0"
         style={{ color: 'var(--border)', touchAction: 'none' }} aria-label="Drag to reorder">
