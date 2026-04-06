@@ -17,11 +17,11 @@ const STANDARD_CATS = ['Layout & space', 'Condition & fabric', 'Location', 'Life
 interface Props { initialCriteria: Criterion[] }
 
 export default function CriteriaManager({ initialCriteria }: Props) {
-  const [criteria, setCriteria] = useState<Criterion[]>(initialCriteria)
-  const [editing,  setEditing]  = useState<Criterion | null>(null)
-  const [adding,   setAdding]   = useState(false)
-  const [saving,   setSaving]   = useState(false)
-  const [error,    setError]    = useState('')
+  const [criteria,   setCriteria]   = useState<Criterion[]>(initialCriteria)
+  const [editingId,  setEditingId]  = useState<string | null>(null)
+  const [adding,     setAdding]     = useState(false)
+  const [saving,     setSaving]     = useState(false)
+  const [error,      setError]      = useState('')
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -29,6 +29,7 @@ export default function CriteriaManager({ initialCriteria }: Props) {
   )
 
   const categories = [...new Set(criteria.map(c => c.category))]
+  const editingCriterion = criteria.find(c => c.id === editingId) ?? null
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -39,7 +40,6 @@ export default function CriteriaManager({ initialCriteria }: Props) {
     const reordered = arrayMove(criteria, oldIdx, newIdx).map((c, i) => ({ ...c, position: i }))
     setCriteria(reordered)
 
-    // Persist reorder
     await fetch('/api/criteria/reorder', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -50,16 +50,16 @@ export default function CriteriaManager({ initialCriteria }: Props) {
   async function saveCriterion(data: Partial<Criterion> & { name: string; category: string }) {
     setSaving(true); setError('')
     try {
-      if (editing) {
-        const res = await fetch(`/api/criteria/${editing.id}`, {
+      if (editingId) {
+        const res = await fetch(`/api/criteria/${editingId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         })
         if (!res.ok) { const j = await res.json(); setError(j.error); return }
         const { data: updated } = await res.json()
-        setCriteria(prev => prev.map(c => c.id === editing.id ? updated : c))
-        setEditing(null)
+        setCriteria(prev => prev.map(c => c.id === editingId ? updated : c))
+        setEditingId(null)
       } else {
         const res = await fetch('/api/criteria', {
           method: 'POST',
@@ -80,12 +80,23 @@ export default function CriteriaManager({ initialCriteria }: Props) {
     if (!confirm('Delete this criterion? Existing ratings for it will also be removed.')) return
     await fetch(`/api/criteria/${id}`, { method: 'DELETE' })
     setCriteria(prev => prev.filter(c => c.id !== id))
-    setEditing(null)
+    setEditingId(null)
+  }
+
+  function handleEdit(id: string) {
+    setEditingId(prev => prev === id ? null : id)
+    setAdding(false)
+    setError('')
+  }
+
+  function handleCancel() {
+    setEditingId(null)
+    setAdding(false)
+    setError('')
   }
 
   return (
     <div>
-      {/* Criteria list grouped by category */}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={criteria.map(c => c.id)} strategy={verticalListSortingStrategy}>
           {categories.map(cat => (
@@ -97,8 +108,18 @@ export default function CriteriaManager({ initialCriteria }: Props) {
               <div className="space-y-2">
                 {criteria.filter(c => c.category === cat).map(c => (
                   <SortableRow
-                    key={c.id} criterion={c}
-                    onEdit={() => { setEditing(c); setAdding(false) }}
+                    key={c.id}
+                    criterion={c}
+                    isEditing={editingId === c.id}
+                    onEdit={() => handleEdit(c.id)}
+                    formProps={{
+                      initial: editingCriterion ?? undefined,
+                      saving,
+                      error,
+                      onSave: saveCriterion,
+                      onDelete: () => deleteCriterion(c.id),
+                      onCancel: handleCancel,
+                    }}
                   />
                 ))}
               </div>
@@ -108,75 +129,99 @@ export default function CriteriaManager({ initialCriteria }: Props) {
       </DndContext>
 
       {/* Add button */}
-      {!adding && !editing && (
-        <button onClick={() => { setAdding(true); setEditing(null) }}
+      {!adding && (
+        <button onClick={() => { setAdding(true); setEditingId(null); setError('') }}
           className="mt-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors"
           style={{ border: '1.5px dashed var(--border)', color: 'var(--muted)', background: 'transparent', width: '100%' }}>
           + Add criterion
         </button>
       )}
 
-      {/* Edit / Add form */}
-      {(adding || editing) && (
-        <CriterionForm
-          initial={editing ?? undefined}
-          saving={saving}
-          error={error}
-          onSave={saveCriterion}
-          onDelete={editing ? () => deleteCriterion(editing.id) : undefined}
-          onCancel={() => { setEditing(null); setAdding(false); setError('') }}
-        />
+      {/* Add form at the bottom */}
+      {adding && (
+        <div className="mt-4">
+          <CriterionForm
+            saving={saving}
+            error={error}
+            onSave={saveCriterion}
+            onCancel={handleCancel}
+          />
+        </div>
       )}
     </div>
   )
 }
 
 // ── Sortable row ──────────────────────────────────────────────────────────────
-function SortableRow({ criterion: c, onEdit }: { criterion: Criterion; onEdit: () => void }) {
+interface SortableRowProps {
+  criterion: Criterion
+  isEditing: boolean
+  onEdit: () => void
+  formProps: FormProps
+}
+
+function SortableRow({ criterion: c, isEditing, onEdit, formProps }: SortableRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: c.id })
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }
 
   return (
-    <div ref={setNodeRef}
-      className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors"
-      style={{ ...style, border: '1px solid var(--border)', background: '#fff', borderRadius: 12 }}>
-     {/* Drag handle */}
-      <button {...attributes} {...listeners}
-        className="cursor-grab active:cursor-grabbing text-lg flex-shrink-0"
-        style={{ color: 'var(--border)', touchAction: 'none' }} aria-label="Drag to reorder">
-        ⠿
-      </button>
+    <div ref={setNodeRef} style={style}>
+      {/* Criterion row */}
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors"
+        style={{ border: '1px solid var(--border)', background: '#fff', borderRadius: 12 }}>
+        {/* Drag handle */}
+        <button {...attributes} {...listeners}
+          className="cursor-grab active:cursor-grabbing text-lg flex-shrink-0"
+          style={{ color: 'var(--border)', touchAction: 'none' }} aria-label="Drag to reorder">
+          ⠿
+        </button>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{c.name}</span>
-          <span className="text-xs px-2 py-0.5 rounded-full"
-            style={{ background: 'var(--surface)', color: 'var(--muted)', border: '1px solid var(--border)' }}>
-            {c.category}
-          </span>
-          <span className="text-xs px-2 py-0.5 rounded-full"
-            style={{ background: c.ratingType === 'star' ? 'var(--amber-soft)' : 'var(--blue-soft)',
-                     color: c.ratingType === 'star' ? 'var(--amber-text)' : 'var(--blue-text)' }}>
-            {c.ratingType === 'star' ? '★ Stars' : '# 1–10'}
-          </span>
-          {!c.required && (
-            <span className="text-xs" style={{ color: 'var(--muted)' }}>optional</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{c.name}</span>
+            <span className="text-xs px-2 py-0.5 rounded-full"
+              style={{ background: 'var(--surface)', color: 'var(--muted)', border: '1px solid var(--border)' }}>
+              {c.category}
+            </span>
+            <span className="text-xs px-2 py-0.5 rounded-full"
+              style={{ background: c.ratingType === 'star' ? 'var(--amber-soft)' : 'var(--blue-soft)',
+                       color: c.ratingType === 'star' ? 'var(--amber-text)' : 'var(--blue-text)' }}>
+              {c.ratingType === 'star' ? '★ Stars' : '# 1–10'}
+            </span>
+            {!c.required && (
+              <span className="text-xs" style={{ color: 'var(--muted)' }}>optional</span>
+            )}
+          </div>
+          {c.description && (
+            <div className="text-xs mt-0.5 truncate" style={{ color: 'var(--muted)' }}>{c.description}</div>
           )}
         </div>
-        {c.description && (
-          <div className="text-xs mt-0.5 truncate" style={{ color: 'var(--muted)' }}>{c.description}</div>
-        )}
+
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <span className="text-xs px-2 py-1 rounded-lg font-mono"
+            style={{ background: 'var(--surface)', color: 'var(--muted)' }}>
+            ×{c.weight}
+          </span>
+          <button onClick={onEdit} className="text-sm px-3 py-1.5 rounded-lg transition-colors hover:bg-stone-100"
+            style={{ color: isEditing ? 'var(--ink)' : 'var(--muted)', fontWeight: isEditing ? 500 : 400 }}>
+            {isEditing ? 'Close' : 'Edit'}
+          </button>
+        </div>
       </div>
 
-      <div className="flex items-center gap-3 flex-shrink-0">
-        <span className="text-xs px-2 py-1 rounded-lg font-mono"
-          style={{ background: 'var(--surface)', color: 'var(--muted)' }}>
-          ×{c.weight}
-        </span>
-        <button onClick={onEdit} className="text-sm px-3 py-1.5 rounded-lg transition-colors hover:bg-stone-100"
-          style={{ color: 'var(--muted)' }}>
-          Edit
-        </button>
+      {/* Inline accordion form */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateRows: isEditing ? '1fr' : '0fr',
+          transition: 'grid-template-rows 0.25s ease',
+        }}
+      >
+        <div style={{ overflow: 'hidden' }}>
+          <div className="pt-2">
+            <CriterionForm {...formProps} />
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -216,7 +261,7 @@ function CriterionForm({ initial, saving, error, onSave, onDelete, onCancel }: F
   const inputStyle = { border: '1px solid var(--border)', background: '#fff', color: 'var(--ink)' }
 
   return (
-    <div className="mt-4 rounded-2xl p-6" style={{ border: '1px solid var(--border)', background: 'var(--surface)' }}>
+    <div className="rounded-2xl p-5" style={{ border: '1px solid var(--border)', background: 'var(--surface)' }}>
       <h3 className="text-sm font-medium mb-5" style={{ color: 'var(--ink)' }}>
         {initial ? 'Edit criterion' : 'Add criterion'}
       </h3>
