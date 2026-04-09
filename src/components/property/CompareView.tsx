@@ -156,7 +156,9 @@ export default function CompareView({ properties, criteria, allRatings, formula 
       {selectedProps.length < 2 ? (
         <div className="rounded-2xl p-10 text-center" style={{ border: '1.5px dashed var(--border)' }}>
           <p style={{ color: 'var(--muted)' }}>
-            Select {2 - selectedProps.length} more {selectedProps.length === 1 ? 'property' : 'properties'} to compare
+            {selectedProps.length === 1
+              ? 'Select one more property to compare'
+              : 'Select up to 5 properties to compare side by side'}
           </p>
         </div>
       ) : (
@@ -169,10 +171,24 @@ export default function CompareView({ properties, criteria, allRatings, formula 
                 </th>
                 {selectedProps.map(p => {
                   const s = getScore(p.id)
+                  const sym = CURRENCY_SYMBOLS[p.currency] ?? '£'
+                  const pricePerArea = p.price && p.internalArea
+                    ? { value: Math.round(p.price / p.internalArea), unit: p.internalAreaUnit === 'sqm' ? '/sqm' : '/sqft' }
+                    : null
                   return (
                     <th key={p.id} className="pb-4 px-3 text-center" style={{ minWidth: 140 }}>
                       <div className="text-xs font-medium truncate" style={{ color: 'var(--ink)', maxWidth: 130 }}>{p.address}</div>
-                      <div className={`text-sm font-medium mt-1 inline-block px-3 py-1 rounded-full ${s.total !== null ? scoreBg(s.total, formula.normalise) : 'bg-stone-100 text-stone-400'}`}>
+                      {p.price && (
+                        <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)', marginTop: 2 }}>
+                          {sym}{p.price.toLocaleString('en-GB')}
+                        </div>
+                      )}
+                      {pricePerArea && (
+                        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                          {sym}{pricePerArea.value.toLocaleString('en-GB')}{pricePerArea.unit}
+                        </div>
+                      )}
+                      <div className={`text-sm font-medium inline-block px-3 py-1 rounded-full ${s.total !== null ? scoreBg(s.total, formula.normalise) : 'bg-stone-100 text-stone-400'}`} style={{ marginTop: 2 }}>
                         {s.total ?? '—'} / {formula.normalise}
                       </div>
                     </th>

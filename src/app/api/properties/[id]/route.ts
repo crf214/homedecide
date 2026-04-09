@@ -3,6 +3,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/session'
+import { logActivity } from '@/lib/activityLog'
+
+const LOGGABLE_FIELDS = [
+  'address', 'street', 'postcode', 'price', 'currency', 'listingUrl',
+  'tenure', 'epc', 'notes', 'internalArea', 'internalAreaUnit',
+  'bedrooms', 'bathrooms', 'livingRooms', 'hasOffice', 'hasGym', 'hasBasement',
+  'gardenType', 'gardenSize', 'gardenOrientation', 'gardenPrivacy',
+  'gardenMaintenance', 'mapsUrl',
+] as const
 
 const updateSchema = z.object({
   address:          z.string().min(1).optional(),
@@ -63,8 +72,31 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (!access) return NextResponse.json({ error: 'Not found or no permission' }, { status: 404 })
     const body = await req.json()
     const data = updateSchema.parse(body)
+    const old = access.property
     const updated = await prisma.property.update({ where: { id: params.id }, data })
-    return NextResponse.json({ data: updated })
+    const response = NextResponse.json({ data: updated })
+
+    void (async () => {
+      const user = await prisma.user.findUnique({ where: { id: userId } })
+      const userName = user?.name ?? user?.email ?? userId
+      for (const field of LOGGABLE_FIELDS) {
+        const oldVal = old[field] ?? null
+        const newVal = (updated as any)[field] ?? null
+        if (String(oldVal) !== String(newVal)) {
+          logActivity({
+            propertyId: params.id,
+            userId,
+            userName,
+            actionType: 'property_updated',
+            fieldName: field,
+            oldValue: oldVal !== null ? String(oldVal) : undefined,
+            newValue: newVal !== null ? String(newVal) : undefined,
+          })
+        }
+      }
+    })()
+
+    return response
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.errors[0].message }, { status: 400 })

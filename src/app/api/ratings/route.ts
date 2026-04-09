@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/session'
+import { logActivity } from '@/lib/activityLog'
 
 const schema = z.object({
   propertyId: z.string(),
@@ -52,6 +53,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Property not found' }, { status: 404 })
     }
 
+    // Fetch existing ratings before upsert so we can diff old vs new
+    const criterionIds = ratings.map(r => r.criterionId)
+    const existingRatings = await prisma.rating.findMany({
+      where: { userId, propertyId, criterionId: { in: criterionIds } },
+    })
+
     const upserted = await prisma.$transaction(
       ratings.map(r =>
         prisma.rating.upsert({
@@ -74,7 +81,35 @@ export async function POST(req: NextRequest) {
       )
     )
 
-    return NextResponse.json({ data: upserted })
+    const response = NextResponse.json({ data: upserted })
+
+    void (async () => {
+      const [user, criteria] = await Promise.all([
+        prisma.user.findUnique({ where: { id: userId } }),
+        prisma.criterion.findMany({ where: { id: { in: criterionIds } } }),
+      ])
+      const userName = user?.name ?? user?.email ?? userId
+      const criteriaMap = new Map(criteria.map(c => [c.id, c.name]))
+
+      for (const r of ratings) {
+        const old = existingRatings.find(e => e.criterionId === r.criterionId)
+        const oldVal = old?.value ?? null
+        const newVal = r.value ?? null
+        if (oldVal !== newVal) {
+          logActivity({
+            propertyId,
+            userId,
+            userName,
+            actionType: 'rated',
+            fieldName: criteriaMap.get(r.criterionId) ?? r.criterionId,
+            oldValue: oldVal !== null ? String(oldVal) : undefined,
+            newValue: newVal !== null ? String(newVal) : undefined,
+          })
+        }
+      }
+    })()
+
+    return response
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.errors[0].message }, { status: 400 })

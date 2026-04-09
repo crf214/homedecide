@@ -23,6 +23,7 @@ model User {
   sharedFrom    PropertyShare[] @relation("SharedBy")
   sharedTo      PropertyShare[] @relation("SharedWith")
   documents     PropertyDocument[]
+  activityLogs  PropertyActivityLog[]
 
   @@map("users")
 }
@@ -66,9 +67,10 @@ model Property {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  ratings     Rating[]
-  shares      PropertyShare[]
-  documents   PropertyDocument[]
+  ratings      Rating[]
+  shares       PropertyShare[]
+  documents    PropertyDocument[]
+  activityLogs PropertyActivityLog[]
 
   @@map("properties")
 }
@@ -157,4 +159,20 @@ model PropertyDocument {
   uploadedAt  DateTime @default(now())
 
   @@map("property_documents")
+}
+
+model PropertyActivityLog {
+  id          String   @id @default(cuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userName    String
+  actionType  String
+  fieldName   String?
+  oldValue    String?
+  newValue    String?
+  createdAt   DateTime @default(now())
+
+  @@map("property_activity_logs")
 }

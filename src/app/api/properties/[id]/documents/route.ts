@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/session'
+import { logActivity } from '@/lib/activityLog'
 
 async function canAccess(propertyId: string, userId: string) {
   const property = await prisma.property.findUnique({ where: { id: propertyId } })
@@ -41,7 +42,20 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
     await prisma.propertyDocument.delete({ where: { id: docId } })
-    return NextResponse.json({ data: { ok: true } })
+    const response = NextResponse.json({ data: { ok: true } })
+
+    void (async () => {
+      const user = await prisma.user.findUnique({ where: { id: userId } })
+      logActivity({
+        propertyId: params.id,
+        userId,
+        userName: user?.name ?? user?.email ?? userId,
+        actionType: 'document_deleted',
+        fieldName: doc.filename,
+      })
+    })()
+
+    return response
   } catch {
     return NextResponse.json({ error: 'Delete failed' }, { status: 500 })
   }

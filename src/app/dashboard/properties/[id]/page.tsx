@@ -7,6 +7,7 @@ import Link from 'next/link'
 import EvaluatePanel from '@/components/property/EvaluatePanel'
 import SharePanel from '@/components/property/SharePanel'
 import DocumentsPanel from '@/components/property/DocumentsPanel'
+import ActivityLog from '@/components/property/ActivityLog'
 
 export default async function PropertyPage({ params }: { params: { id: string } }) {
   const session = await getSession()
@@ -153,6 +154,9 @@ export default async function PropertyPage({ params }: { params: { id: string } 
                 Edit details
               </Link>
             )}
+            <a href="#activity-log" className="text-xs underline mt-0.5 block" style={{ color: 'var(--muted)' }}>
+              History
+            </a>
           </div>
         </div>
       </div>
@@ -275,6 +279,8 @@ export default async function PropertyPage({ params }: { params: { id: string } 
           <SharePanel propertyId={params.id} />
         </div>
       )}
+
+      <ActivityLog propertyId={params.id} />
     </div>
     </>
   )

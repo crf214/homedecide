@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/session'
 import { uploadDocument } from '@/lib/supabase'
+import { logActivity } from '@/lib/activityLog'
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -34,7 +35,20 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         fileSize: file.size,
       },
     })
-    return NextResponse.json({ data: doc }, { status: 201 })
+    const response = NextResponse.json({ data: doc }, { status: 201 })
+
+    void (async () => {
+      const user = await prisma.user.findUnique({ where: { id: userId } })
+      logActivity({
+        propertyId: params.id,
+        userId,
+        userName: user?.name ?? user?.email ?? userId,
+        actionType: 'document_uploaded',
+        fieldName: file.name,
+      })
+    })()
+
+    return response
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Upload failed'
     return NextResponse.json({ error: message }, { status: 500 })

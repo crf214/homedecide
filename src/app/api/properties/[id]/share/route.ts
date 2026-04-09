@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/session'
+import { logActivity } from '@/lib/activityLog'
 
 const shareSchema = z.object({
   email:   z.string().email(),
@@ -42,7 +43,20 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       },
     })
 
-    return NextResponse.json({ data: share })
+    const response = NextResponse.json({ data: share })
+
+    void (async () => {
+      const actor = await prisma.user.findUnique({ where: { id: userId } })
+      logActivity({
+        propertyId: params.id,
+        userId,
+        userName: actor?.name ?? actor?.email ?? userId,
+        actionType: 'shared',
+        fieldName: email,
+      })
+    })()
+
+    return response
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.errors[0].message }, { status: 400 })
@@ -67,7 +81,23 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       },
     })
 
-    return NextResponse.json({ data: { ok: true } })
+    const response = NextResponse.json({ data: { ok: true } })
+
+    void (async () => {
+      const [actor, target] = await Promise.all([
+        prisma.user.findUnique({ where: { id: userId } }),
+        prisma.user.findUnique({ where: { id: sharedWithId } }),
+      ])
+      logActivity({
+        propertyId: params.id,
+        userId,
+        userName: actor?.name ?? actor?.email ?? userId,
+        actionType: 'unshared',
+        fieldName: target?.email ?? sharedWithId,
+      })
+    })()
+
+    return response
   } catch {
     return NextResponse.json({ error: 'Unshare failed' }, { status: 500 })
   }
