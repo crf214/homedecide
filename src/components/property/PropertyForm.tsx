@@ -36,6 +36,8 @@ interface Props {
     gardenPrivacy?: string | null
     gardenType?: string | null
     gardenMaintenance?: string | null
+    neighbourhood?: string | null
+    neighbourhoodSub?: string | null
   }
 }
 
@@ -133,6 +135,8 @@ export default function PropertyForm({ property }: Props) {
   const [gardenOrientation, setGardenOrientation] = useState(property?.gardenOrientation ?? '')
   const [gardenPrivacy, setGardenPrivacy] = useState(property?.gardenPrivacy ?? '')
   const [gardenMaintenance, setGardenMaintenance] = useState(property?.gardenMaintenance ?? '')
+  const [neighbourhood, setNeighbourhood] = useState(property?.neighbourhood ?? '')
+  const [neighbourhoodSub, setNeighbourhoodSub] = useState(property?.neighbourhoodSub ?? '')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -186,6 +190,8 @@ export default function PropertyForm({ property }: Props) {
         gardenOrientation: gardenOrientation || null,
         gardenPrivacy: gardenPrivacy || null,
         gardenMaintenance: gardenMaintenance || null,
+        neighbourhood: neighbourhood.trim() || null,
+        neighbourhoodSub: neighbourhoodSub.trim() || null,
       }
       let propId = property?.id
       if (isEdit) {
@@ -256,6 +262,18 @@ export default function PropertyForm({ property }: Props) {
         <label style={lSty}>Google Maps link</label>
         <input type="url" value={mapsUrl} onChange={e => setMapsUrl(e.target.value)}
           className={iCls} style={iSty} placeholder="Paste a Google Maps share link" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+        <div>
+          <label style={lSty}>Area / neighbourhood</label>
+          <input type="text" value={neighbourhood} onChange={e => setNeighbourhood(e.target.value)}
+            className={iCls} style={iSty} placeholder="e.g. Chelsea, Notting Hill" />
+        </div>
+        <div>
+          <label style={lSty}>Sub-area</label>
+          <input type="text" value={neighbourhoodSub} onChange={e => setNeighbourhoodSub(e.target.value)}
+            className={iCls} style={iSty} placeholder="e.g. World's End, Sloane Square" />
+        </div>
       </div>
 
       <div style={sSty}>

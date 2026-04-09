@@ -3,11 +3,13 @@ import { notFound } from 'next/navigation'
 import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import { calcScore, scoreBg, CURRENCY_SYMBOLS } from '@/lib/scoring'
+import { getNeighbourhoodColor, neighbourhoodPillStyle } from '@/lib/neighbourhoodColor'
 import Link from 'next/link'
 import EvaluatePanel from '@/components/property/EvaluatePanel'
 import SharePanel from '@/components/property/SharePanel'
 import DocumentsPanel from '@/components/property/DocumentsPanel'
 import ActivityLog from '@/components/property/ActivityLog'
+import HistoryLink from '@/components/property/HistoryLink'
 
 export default async function PropertyPage({ params }: { params: { id: string } }) {
   const session = await getSession()
@@ -55,10 +57,21 @@ export default async function PropertyPage({ params }: { params: { id: string } 
       }}>
         {/* Left group: name + attributes in one line */}
         <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 0 }}>
-            <span style={{ fontSize: '15px', fontWeight: 500, color: 'var(--ink)', marginRight: '4px', whiteSpace: 'nowrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0 }}>
+            <span style={{ fontSize: '15px', fontWeight: 500, color: 'var(--ink)', marginRight: '6px', whiteSpace: 'nowrap' }}>
               {property.address}
             </span>
+            {property.neighbourhood && (
+              <span style={{
+                ...neighbourhoodPillStyle,
+                ...getNeighbourhoodColor(property.neighbourhood),
+                fontSize: '11px',
+                padding: '1px 8px',
+                marginRight: '2px',
+              }}>
+                {[property.neighbourhood, property.neighbourhoodSub].filter(Boolean).join(' · ')}
+              </span>
+            )}
             {[
               property.tenure ?? null,
               property.price ? `${sym}${property.price.toLocaleString('en-GB')}` : null,
@@ -99,9 +112,13 @@ export default async function PropertyPage({ params }: { params: { id: string } 
                 </div>
               )}
               <div className="flex items-center gap-2 flex-wrap">
+                {property.neighbourhood && (
+                  <span style={{ ...neighbourhoodPillStyle, ...getNeighbourhoodColor(property.neighbourhood) }}>
+                    {[property.neighbourhood, property.neighbourhoodSub].filter(Boolean).join(' · ')}
+                  </span>
+                )}
                 {[
                   property.tenure,
-                  property.epc ? `EPC ${property.epc}` : null,
                   property.price ? `${sym}${property.price.toLocaleString('en-GB')}` : null,
                 ].filter(Boolean).map((m, i) => (
                   <span key={i} className="text-xs px-2.5 py-0.5 rounded-full"
@@ -154,9 +171,7 @@ export default async function PropertyPage({ params }: { params: { id: string } 
                 Edit details
               </Link>
             )}
-            <a href="#activity-log" className="text-xs underline mt-0.5 block" style={{ color: 'var(--muted)' }}>
-              History
-            </a>
+            <HistoryLink />
           </div>
         </div>
       </div>
@@ -205,6 +220,12 @@ export default async function PropertyPage({ params }: { params: { id: string } 
                     : `${(property.internalArea / 10.764).toFixed(1)} sqm`})
                 </span>
               </div>
+            </div>
+          )}
+          {property.epc && (
+            <div>
+              <div className="text-xs" style={{ color: 'var(--muted)' }}>EPC</div>
+              <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>{property.epc}</div>
             </div>
           )}
         </div>

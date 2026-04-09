@@ -61,6 +61,9 @@ model Property {
   gardenType        String?
   gardenMaintenance String?
 
+  neighbourhood    String?
+  neighbourhoodSub String?
+
   mapsUrl     String?
   listingLinks Json     @default("[]")
 

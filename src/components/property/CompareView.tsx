@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import type { Property, Criterion, Rating, Formula } from '@/types'
 import { calcScore, normalizeValue, scoreBg, CURRENCY_SYMBOLS } from '@/lib/scoring'
+import { getNeighbourhoodColor, neighbourhoodPillStyle } from '@/lib/neighbourhoodColor'
 
 const MAX_COMPARE = 5
 
@@ -178,6 +179,13 @@ export default function CompareView({ properties, criteria, allRatings, formula 
                   return (
                     <th key={p.id} className="pb-4 px-3 text-center" style={{ minWidth: 140 }}>
                       <div className="text-xs font-medium truncate" style={{ color: 'var(--ink)', maxWidth: 130 }}>{p.address}</div>
+                      {p.neighbourhood && (
+                        <div style={{ marginTop: 3 }}>
+                          <span style={{ ...neighbourhoodPillStyle, ...getNeighbourhoodColor(p.neighbourhood), fontSize: '11px', padding: '1px 8px' }}>
+                            {[p.neighbourhood, p.neighbourhoodSub].filter(Boolean).join(' · ')}
+                          </span>
+                        </div>
+                      )}
                       {p.price && (
                         <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)', marginTop: 2 }}>
                           {sym}{p.price.toLocaleString('en-GB')}

@@ -1,6 +1,7 @@
 'use client'
 // src/components/property/ActivityLog.tsx
-import { useState } from 'react'
+import { useState, useCallback, useEffect, useImperativeHandle, forwardRef } from 'react'
+import type { ForwardedRef } from 'react'
 
 interface LogEntry {
   id: string
@@ -10,6 +11,10 @@ interface LogEntry {
   oldValue: string | null
   newValue: string | null
   createdAt: string
+}
+
+export interface ActivityLogHandle {
+  open: () => void
 }
 
 function formatDate(iso: string): string {
@@ -40,18 +45,19 @@ function describe(entry: LogEntry): string {
   }
 }
 
-export default function ActivityLog({ propertyId }: { propertyId: string }) {
+// Defined as a plain function first, then wrapped with forwardRef below.
+// This avoids the webpack module-factory error caused by the self-referential
+// pattern: const Foo = forwardRef(function Foo(...)) { ... })
+function ActivityLogInner(
+  { propertyId }: { propertyId: string },
+  ref: ForwardedRef<ActivityLogHandle>
+) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [entries, setEntries] = useState<LogEntry[] | null>(null)
 
-  async function toggle() {
-    if (open) {
-      setOpen(false)
-      return
-    }
+  const fetchAndOpen = useCallback(async () => {
     setOpen(true)
-    if (entries !== null) return
     setLoading(true)
     try {
       const res = await fetch(`/api/properties/${propertyId}/activity`)
@@ -61,6 +67,24 @@ export default function ActivityLog({ propertyId }: { propertyId: string }) {
       setEntries([])
     } finally {
       setLoading(false)
+    }
+  }, [propertyId])
+
+  // Expose open() so parent components that hold a ref can call it
+  useImperativeHandle(ref, () => ({ open: fetchAndOpen }), [fetchAndOpen])
+
+  // Also listen for the custom event fired by HistoryLink (the server-component
+  // parent cannot pass a ref, so the event bridge is the working mechanism)
+  useEffect(() => {
+    window.addEventListener('open-activity-log', fetchAndOpen as EventListener)
+    return () => window.removeEventListener('open-activity-log', fetchAndOpen as EventListener)
+  }, [fetchAndOpen])
+
+  function toggle() {
+    if (open) {
+      setOpen(false)
+    } else {
+      void fetchAndOpen()
     }
   }
 
@@ -84,7 +108,7 @@ export default function ActivityLog({ propertyId }: { propertyId: string }) {
 
           {loading && (
             <div className="px-4 py-6 text-center text-xs" style={{ color: 'var(--muted)' }}>
-              Loading history…
+              Refreshing…
             </div>
           )}
 
@@ -124,3 +148,5 @@ export default function ActivityLog({ propertyId }: { propertyId: string }) {
     </div>
   )
 }
+
+export default forwardRef(ActivityLogInner)

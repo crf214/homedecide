@@ -2,6 +2,7 @@
 import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import { calcScore, scoreBg, CURRENCY_SYMBOLS } from '@/lib/scoring'
+import { getNeighbourhoodColor, neighbourhoodPillStyle } from '@/lib/neighbourhoodColor'
 import Link from 'next/link'
 
 export default async function RankingsPage() {
@@ -78,9 +79,16 @@ export default async function RankingsPage() {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="font-medium mb-1" style={{ color: 'var(--ink)' }}>{p.address}</div>
-                  <div className="text-sm mb-3" style={{ color: 'var(--muted)' }}>
-                    {[p.tenure, p.epc ? `EPC ${p.epc}` : null, p.price ? `${sym}${p.price.toLocaleString('en-GB')}` : null]
-                      .filter(Boolean).join(' · ')}
+                  <div className="flex items-center gap-2 flex-wrap mb-3">
+                    {p.neighbourhood && (
+                      <span style={{ ...neighbourhoodPillStyle, ...getNeighbourhoodColor(p.neighbourhood) }}>
+                        {[p.neighbourhood, p.neighbourhoodSub].filter(Boolean).join(' · ')}
+                      </span>
+                    )}
+                    <span className="text-sm" style={{ color: 'var(--muted)' }}>
+                      {[p.tenure, p.price ? `${sym}${p.price.toLocaleString('en-GB')}` : null]
+                        .filter(Boolean).join(' · ')}
+                    </span>
                   </div>
 
                   {/* Category breakdown */}

@@ -10,7 +10,7 @@ const LOGGABLE_FIELDS = [
   'tenure', 'epc', 'notes', 'internalArea', 'internalAreaUnit',
   'bedrooms', 'bathrooms', 'livingRooms', 'hasOffice', 'hasGym', 'hasBasement',
   'gardenType', 'gardenSize', 'gardenOrientation', 'gardenPrivacy',
-  'gardenMaintenance', 'mapsUrl',
+  'gardenMaintenance', 'mapsUrl', 'neighbourhood', 'neighbourhoodSub',
 ] as const
 
 const updateSchema = z.object({
@@ -38,8 +38,10 @@ const updateSchema = z.object({
   gardenPrivacy:      z.string().optional().nullable(),
   gardenType:         z.string().optional().nullable(),
   gardenMaintenance:  z.string().optional().nullable(),
-  mapsUrl:            z.string().optional().nullable(),
-  listingLinks:       z.array(z.object({ label: z.string(), url: z.string() })).optional(),
+  mapsUrl:             z.string().optional().nullable(),
+  listingLinks:        z.array(z.object({ label: z.string(), url: z.string() })).optional(),
+  neighbourhood:       z.string().optional().nullable(),
+  neighbourhoodSub:    z.string().optional().nullable(),
 })
 
 async function canAccess(propertyId: string, userId: string, requireEdit = false) {

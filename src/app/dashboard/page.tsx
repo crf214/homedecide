@@ -2,8 +2,8 @@
 import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
-import { calcScore } from '@/lib/scoring'
-import { scoreBg } from '@/lib/scoring'
+import { calcScore, scoreBg } from '@/lib/scoring'
+import { getNeighbourhoodColor, neighbourhoodPillStyle } from '@/lib/neighbourhoodColor'
 
 export default async function DashboardPage() {
   const session = await getSession()
@@ -79,8 +79,15 @@ export default async function DashboardPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-medium truncate" style={{ color: 'var(--ink)' }}>{p.address}</div>
-                <div className="text-sm mt-0.5" style={{ color: 'var(--muted)' }}>
-                  {p.tenure ?? ''}{p.epc ? ` · EPC ${p.epc}` : ''}{p.price ? ` · £${p.price.toLocaleString('en-GB')}` : ''}
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  {p.neighbourhood && (
+                    <span style={{ ...neighbourhoodPillStyle, ...getNeighbourhoodColor(p.neighbourhood) }}>
+                      {[p.neighbourhood, p.neighbourhoodSub].filter(Boolean).join(' · ')}
+                    </span>
+                  )}
+                  <span className="text-sm" style={{ color: 'var(--muted)' }}>
+                    {[p.tenure, p.price ? `£${p.price.toLocaleString('en-GB')}` : null].filter(Boolean).join(' · ')}
+                  </span>
                 </div>
               </div>
               <div className={`px-3 py-1 rounded-full text-sm font-medium ${p.score !== null ? scoreBg(p.score, f.normalise) : 'bg-stone-100 text-stone-400'}`}>

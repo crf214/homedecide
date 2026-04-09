@@ -84,9 +84,11 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
           listingUrl:   property.listingUrl ?? undefined,
           mapsUrl:      property.mapsUrl ?? undefined,
           listingLinks: (Array.isArray(property.listingLinks) ? property.listingLinks : []) as { label: string; url: string }[],
-          tenure:       property.tenure ?? undefined,
-          epc:          property.epc ?? undefined,
-          notes:        property.notes ?? undefined,
+          tenure:           property.tenure ?? undefined,
+          epc:              property.epc ?? undefined,
+          notes:            property.notes ?? undefined,
+          neighbourhood:    property.neighbourhood ?? undefined,
+          neighbourhoodSub: property.neighbourhoodSub ?? undefined,
         }} />
       </div>
     </>

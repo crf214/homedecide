@@ -21,6 +21,10 @@ export interface Property {
   epc?: string | null
   notes?: string | null
   photos: string[]
+  neighbourhood?: string | null
+  neighbourhoodSub?: string | null
+  internalArea?: number | null
+  internalAreaUnit?: string | null
   createdAt: string
   updatedAt: string
   // joined

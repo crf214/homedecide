@@ -3,6 +3,7 @@ import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { calcScore, scoreBg, CURRENCY_SYMBOLS } from '@/lib/scoring'
+import { getNeighbourhoodColor, neighbourhoodPillStyle } from '@/lib/neighbourhoodColor'
 
 export default async function PropertiesPage() {
   const session = await getSession()
@@ -84,9 +85,16 @@ export default async function PropertiesPage() {
               {/* Body */}
               <div className="p-4">
                 <div className="font-medium truncate mb-1" style={{ color: 'var(--ink)' }}>{p.address}</div>
-                <div className="text-sm" style={{ color: 'var(--muted)' }}>
-                  {[p.tenure, p.epc ? `EPC ${p.epc}` : null, p.price ? `${CURRENCY_SYMBOLS[p.currency]}${p.price.toLocaleString('en-GB')}` : null]
-                    .filter(Boolean).join(' · ')}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {p.neighbourhood && (
+                    <span style={{ ...neighbourhoodPillStyle, ...getNeighbourhoodColor(p.neighbourhood) }}>
+                      {[p.neighbourhood, p.neighbourhoodSub].filter(Boolean).join(' · ')}
+                    </span>
+                  )}
+                  <span className="text-sm" style={{ color: 'var(--muted)' }}>
+                    {[p.tenure, p.price ? `${CURRENCY_SYMBOLS[p.currency]}${p.price.toLocaleString('en-GB')}` : null]
+                      .filter(Boolean).join(' · ')}
+                  </span>
                 </div>
                 <div className="mt-3 flex items-center gap-2">
                   <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>

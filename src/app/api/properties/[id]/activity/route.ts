@@ -23,7 +23,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       take: 100,
     })
 
-    return NextResponse.json({ data: logs })
+    return NextResponse.json({ data: logs }, {
+      headers: {
+        'Cache-Control': 'no-store',
+        'Pragma': 'no-cache',
+      },
+    })
   } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
