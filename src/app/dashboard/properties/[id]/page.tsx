@@ -35,45 +35,104 @@ export default async function PropertyPage({ params }: { params: { id: string } 
 
   const listingLinks = (Array.isArray(property.listingLinks) ? property.listingLinks : []) as { label: string; url: string }[]
 
+  // Price per area calculations for sticky bar
+  const pricePerAreaPrimary = property.price && property.internalArea
+    ? (property.internalAreaUnit === 'sqm'
+        ? { value: Math.round(property.price / property.internalArea), unit: '/sqm', secondaryValue: Math.round(property.price / (property.internalArea * 10.764)), secondaryUnit: '/sqft' }
+        : { value: Math.round(property.price / property.internalArea), unit: '/sqft', secondaryValue: Math.round(property.price / (property.internalArea / 10.764)), secondaryUnit: '/sqm' })
+    : null
+
   return (
-    <div className="p-8 max-w-5xl fade-up">
-      <div className="flex items-start gap-6 mb-8 flex-wrap">
+    <>
+      {/* Sticky header bar */}
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
+        height: '56px', padding: '0 2rem',
+        background: '#fff',
+        borderBottom: '3px solid #1F3C8F',
+        display: 'flex', alignItems: 'center',
+      }}>
+        {/* Left group: name + attributes in one line */}
+        <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 0 }}>
+            <span style={{ fontSize: '15px', fontWeight: 500, color: 'var(--ink)', marginRight: '4px', whiteSpace: 'nowrap' }}>
+              {property.address}
+            </span>
+            {[
+              property.tenure ?? null,
+              property.price ? `${sym}${property.price.toLocaleString('en-GB')}` : null,
+              [
+                property.bedrooms != null ? `${property.bedrooms} bed` : null,
+                property.bathrooms != null ? `${property.bathrooms} bath` : null,
+              ].filter(Boolean).join(' · ') || null,
+              pricePerAreaPrimary ? `${sym}${pricePerAreaPrimary.value.toLocaleString('en-GB')}${pricePerAreaPrimary.unit}` : null,
+            ].filter(Boolean).map((attr, i) => (
+              <span key={i} style={{ fontSize: '13px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+                <span style={{ margin: '0 5px', opacity: 0.4 }}>·</span>{attr}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Score ring — far right */}
+        <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium border-2
+          ${breakdown.total !== null ? scoreBg(breakdown.total, f.normalise) : 'bg-stone-50 text-stone-400 border-stone-200'}`}>
+          {breakdown.total ?? '—'}
+        </div>
+      </div>
+
+    <div className="p-8 max-w-5xl fade-up" style={{ paddingTop: 'calc(56px + 2rem)' }}>
+      {/* Main header */}
+      <div className="flex items-start gap-6 mb-4 flex-wrap">
         <div className="flex-1 min-w-0">
           <Link href="/dashboard/properties" className="text-sm" style={{ color: 'var(--muted)' }}>
             ← Properties
           </Link>
-          <h1 className="font-display text-3xl mb-2 mt-1" style={{ color: 'var(--ink)' }}>{property.address}</h1>
-          {property.street && (
-            <div className="text-sm mb-1" style={{ color: 'var(--muted)' }}>
-              {property.street}{property.postcode ? `, ${property.postcode}` : ''}
+          {/* Address row: name left, links right */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', marginTop: '4px' }}>
+            <div style={{ minWidth: 0 }}>
+              <h1 className="font-display text-3xl mb-1" style={{ color: 'var(--ink)' }}>{property.address}</h1>
+              {property.street && (
+                <div className="text-sm mb-1" style={{ color: 'var(--muted)' }}>
+                  {property.street}{property.postcode ? `, ${property.postcode}` : ''}
+                </div>
+              )}
+              <div className="flex items-center gap-2 flex-wrap">
+                {[
+                  property.tenure,
+                  property.epc ? `EPC ${property.epc}` : null,
+                  property.price ? `${sym}${property.price.toLocaleString('en-GB')}` : null,
+                ].filter(Boolean).map((m, i) => (
+                  <span key={i} className="text-xs px-2.5 py-0.5 rounded-full"
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--muted)' }}>
+                    {m}
+                  </span>
+                ))}
+              </div>
             </div>
-          )}
-          <div className="flex items-center gap-3 flex-wrap">
-            {[
-              property.tenure,
-              property.epc ? `EPC ${property.epc}` : null,
-              property.price ? `${sym}${property.price.toLocaleString('en-GB')}` : null,
-            ].filter(Boolean).map((m, i) => (
-              <span key={i} className="text-sm px-3 py-1 rounded-full"
-                style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--muted)' }}>
-                {m}
-              </span>
-            ))}
+            {/* Listing links + Maps — right-aligned */}
+            {(listingLinks.length > 0 || property.mapsUrl) && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', flexShrink: 0, paddingTop: '4px' }}>
+                {listingLinks.map((link, i) => (
+                  <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-medium"
+                    style={{ background: 'var(--blue-soft)', color: 'var(--blue-text)', border: '1px solid transparent' }}>
+                    {link.label || link.url}
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                      <path d="M1.5 8.5L8.5 1.5M8.5 1.5H3.5M8.5 1.5V6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </a>
+                ))}
+                {property.mapsUrl && (
+                  <a href={property.mapsUrl} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-medium"
+                    style={{ background: 'var(--blue-soft)', color: 'var(--blue-text)', border: '1px solid transparent' }}>
+                    Google Maps ↗
+                  </a>
+                )}
+              </div>
+            )}
           </div>
-          {listingLinks.length > 0 && (
-            <div className="flex items-center gap-2 flex-wrap mt-2">
-              {listingLinks.map((link, i) => (
-                <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-medium"
-                  style={{ background: 'var(--blue-soft)', color: 'var(--blue-text)', border: '1px solid transparent' }}>
-                  {link.label || link.url}
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-                    <path d="M1.5 8.5L8.5 1.5M8.5 1.5H3.5M8.5 1.5V6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </a>
-              ))}
-            </div>
-          )}
         </div>
 
         <div className="flex items-center gap-4">
@@ -98,8 +157,9 @@ export default async function PropertyPage({ params }: { params: { id: string } 
         </div>
       </div>
 
+      {/* Photos */}
       {property.photos.length > 0 && (
-        <div className="flex gap-3 mb-8 overflow-x-auto pb-2">
+        <div className="flex gap-3 mb-6 overflow-x-auto pb-2">
           {property.photos.map((src, i) => (
             <img key={i} src={src} alt=""
               className="h-48 w-auto flex-shrink-0 rounded-2xl object-cover"
@@ -108,26 +168,10 @@ export default async function PropertyPage({ params }: { params: { id: string } 
         </div>
       )}
 
-      {property.mapsUrl && (
-        <div className="flex items-center gap-2 flex-wrap mb-8">
-          <a href={property.mapsUrl} target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-medium"
-            style={{ background: 'var(--blue-soft)', color: 'var(--blue-text)', border: '1px solid transparent' }}>
-            View on Google Maps ↗
-          </a>
-        </div>
-      )}
-
-      {property.notes && (
-        <div className="mb-6 p-5 rounded-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-          <div className="text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: 'var(--muted)' }}>Notes</div>
-          <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--ink)' }}>{property.notes}</p>
-        </div>
-      )}
-
-      <div className="mb-8 rounded-2xl p-5" style={{ border: '1px solid var(--border)', background: '#fff' }}>
-        <div className="text-xs font-medium mb-4 uppercase tracking-wider" style={{ color: 'var(--muted)' }}>Property details</div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Property details — before notes */}
+      <div className="mb-6 rounded-2xl p-4" style={{ border: '1px solid var(--border)', background: '#fff' }}>
+        <div className="text-xs font-medium mb-3 uppercase tracking-wider" style={{ color: 'var(--muted)' }}>Property details</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {property.bedrooms != null && (
             <div>
               <div className="text-xs" style={{ color: 'var(--muted)' }}>Bedrooms</div>
@@ -208,6 +252,14 @@ export default async function PropertyPage({ params }: { params: { id: string } 
         )}
       </div>
 
+      {/* Notes — after property details */}
+      {property.notes && (
+        <div className="mb-5 p-4 rounded-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <div className="text-xs font-medium mb-1.5 uppercase tracking-wider" style={{ color: 'var(--muted)' }}>Notes</div>
+          <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--ink)' }}>{property.notes}</p>
+        </div>
+      )}
+
       <EvaluatePanel
         propertyId={params.id}
         criteria={criteria as any}
@@ -224,5 +276,6 @@ export default async function PropertyPage({ params }: { params: { id: string } 
         </div>
       )}
     </div>
+    </>
   )
 }
