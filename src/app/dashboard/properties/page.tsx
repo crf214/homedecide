@@ -85,6 +85,9 @@ export default async function PropertiesPage() {
               {/* Body */}
               <div className="p-4">
                 <div className="font-medium truncate mb-1" style={{ color: 'var(--ink)' }}>{p.address}</div>
+                {(p as any).propertyType && (
+                  <div className="text-xs mb-1" style={{ color: 'var(--muted)' }}>{(p as any).propertyType}</div>
+                )}
                 <div className="flex items-center gap-2 flex-wrap">
                   {p.neighbourhood && (
                     <span style={{ ...neighbourhoodPillStyle, ...getNeighbourhoodColor(p.neighbourhood) }}>

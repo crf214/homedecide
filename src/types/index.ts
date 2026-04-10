@@ -25,6 +25,12 @@ export interface Property {
   neighbourhoodSub?: string | null
   internalArea?: number | null
   internalAreaUnit?: string | null
+  propertyType?: string | null
+  isNewBuild?: boolean | null
+  floorInBuilding?: number | null
+  totalFloorsInBuilding?: number | null
+  isTopFloor?: boolean | null
+  hasLift?: boolean | null
   createdAt: string
   updatedAt: string
   // joined

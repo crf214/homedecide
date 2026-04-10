@@ -8,6 +8,7 @@ import Link from 'next/link'
 import EvaluatePanel from '@/components/property/EvaluatePanel'
 import SharePanel from '@/components/property/SharePanel'
 import DocumentsPanel from '@/components/property/DocumentsPanel'
+import BuildingsPanel from '@/components/property/BuildingsPanel'
 import ActivityLog from '@/components/property/ActivityLog'
 import HistoryLink from '@/components/property/HistoryLink'
 
@@ -58,6 +59,11 @@ export default async function PropertyPage({ params }: { params: { id: string } 
         {/* Left group: name + attributes in one line */}
         <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0 }}>
+            {(property as any).propertyType && (
+              <span style={{ fontSize: '11px', color: 'var(--muted)', marginRight: '6px', whiteSpace: 'nowrap' }}>
+                {(property as any).propertyType}
+              </span>
+            )}
             <span style={{ fontSize: '15px', fontWeight: 500, color: 'var(--ink)', marginRight: '6px', whiteSpace: 'nowrap' }}>
               {property.address}
             </span>
@@ -112,6 +118,18 @@ export default async function PropertyPage({ params }: { params: { id: string } 
                 </div>
               )}
               <div className="flex items-center gap-2 flex-wrap">
+                {property.propertyType && (
+                  <span className="text-xs px-2.5 py-0.5 rounded-full font-medium"
+                    style={{ background: '#1F3C8F', color: '#fff' }}>
+                    {property.propertyType}
+                  </span>
+                )}
+                {property.isNewBuild && (
+                  <span className="text-xs px-2.5 py-0.5 rounded-full font-medium"
+                    style={{ background: '#E8F5E9', color: '#1B5E20' }}>
+                    New build
+                  </span>
+                )}
                 {property.neighbourhood && (
                   <span style={{ ...neighbourhoodPillStyle, ...getNeighbourhoodColor(property.neighbourhood) }}>
                     {[property.neighbourhood, property.neighbourhoodSub].filter(Boolean).join(' · ')}
@@ -187,54 +205,34 @@ export default async function PropertyPage({ params }: { params: { id: string } 
         </div>
       )}
 
-      {/* Property details — before notes */}
+      {/* Property details — building position + garden */}
+      {((property as any).floorInBuilding != null || (property as any).isTopFloor || (property as any).hasLift ||
+        (property.gardenType && property.gardenType !== 'none')) && (
       <div className="mb-6 rounded-2xl p-4" style={{ border: '1px solid var(--border)', background: '#fff' }}>
         <div className="text-xs font-medium mb-3 uppercase tracking-wider" style={{ color: 'var(--muted)' }}>Property details</div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {property.bedrooms != null && (
-            <div>
-              <div className="text-xs" style={{ color: 'var(--muted)' }}>Bedrooms</div>
-              <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>{property.bedrooms}</div>
-            </div>
-          )}
-          {property.bathrooms != null && (
-            <div>
-              <div className="text-xs" style={{ color: 'var(--muted)' }}>Bathrooms</div>
-              <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>{property.bathrooms}</div>
-            </div>
-          )}
-          {property.livingRooms != null && (
-            <div>
-              <div className="text-xs" style={{ color: 'var(--muted)' }}>Living rooms</div>
-              <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>{property.livingRooms}</div>
-            </div>
-          )}
-          {property.internalArea != null && (
-            <div>
-              <div className="text-xs" style={{ color: 'var(--muted)' }}>Internal area</div>
-              <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>
-                {property.internalArea} {property.internalAreaUnit ?? 'sqft'}
-                <span className="text-xs ml-1" style={{ color: 'var(--muted)' }}>
-                  ({property.internalAreaUnit === 'sqm'
-                    ? `${Math.round(property.internalArea * 10.764)} sqft`
-                    : `${(property.internalArea / 10.764).toFixed(1)} sqm`})
-                </span>
+        {((property as any).floorInBuilding != null || (property as any).isTopFloor || (property as any).hasLift) && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            {(property as any).floorInBuilding != null && (
+              <div>
+                <div className="text-xs" style={{ color: 'var(--muted)' }}>Floor</div>
+                <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>
+                  {(property as any).floorInBuilding}
+                  {(property as any).totalFloorsInBuilding != null ? ` of ${(property as any).totalFloorsInBuilding}` : ''}
+                </div>
               </div>
-            </div>
-          )}
-          {property.epc && (
-            <div>
-              <div className="text-xs" style={{ color: 'var(--muted)' }}>EPC</div>
-              <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>{property.epc}</div>
-            </div>
-          )}
-        </div>
-
-        {(property.hasOffice || property.hasGym || property.hasBasement) && (
-          <div className="flex gap-2 mt-4 flex-wrap">
-            {property.hasOffice   && <span className="text-xs px-3 py-1 rounded-full" style={{ background: 'var(--blue-soft)', color: 'var(--blue-text)' }}>Office</span>}
-            {property.hasGym      && <span className="text-xs px-3 py-1 rounded-full" style={{ background: 'var(--blue-soft)', color: 'var(--blue-text)' }}>Gym</span>}
-            {property.hasBasement && <span className="text-xs px-3 py-1 rounded-full" style={{ background: 'var(--blue-soft)', color: 'var(--blue-text)' }}>Basement</span>}
+            )}
+            {(property as any).isTopFloor && (
+              <div>
+                <div className="text-xs" style={{ color: 'var(--muted)' }}>Top floor</div>
+                <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>Yes</div>
+              </div>
+            )}
+            {(property as any).hasLift && (
+              <div>
+                <div className="text-xs" style={{ color: 'var(--muted)' }}>Lift</div>
+                <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>Yes</div>
+              </div>
+            )}
           </div>
         )}
 
@@ -276,14 +274,109 @@ export default async function PropertyPage({ params }: { params: { id: string } 
           </div>
         )}
       </div>
+      )}
 
-      {/* Notes — after property details */}
+      {/* Price & tenure */}
+      {(property.price || property.tenure || property.epc) && (
+        <div className="mb-6 rounded-2xl p-4" style={{ border: '1px solid var(--border)', background: '#fff' }}>
+          <div className="text-xs font-medium mb-3 uppercase tracking-wider" style={{ color: 'var(--muted)' }}>Price & tenure</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {property.price && (
+              <div>
+                <div className="text-xs" style={{ color: 'var(--muted)' }}>Asking price</div>
+                <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>
+                  {sym}{property.price.toLocaleString('en-GB')}
+                </div>
+              </div>
+            )}
+            {pricePerAreaPrimary && (
+              <div>
+                <div className="text-xs" style={{ color: 'var(--muted)' }}>Price per area</div>
+                <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>
+                  {sym}{pricePerAreaPrimary.value.toLocaleString('en-GB')}{pricePerAreaPrimary.unit}
+                  <span className="text-xs ml-1" style={{ color: 'var(--muted)' }}>
+                    ({sym}{pricePerAreaPrimary.secondaryValue.toLocaleString('en-GB')}{pricePerAreaPrimary.secondaryUnit})
+                  </span>
+                </div>
+              </div>
+            )}
+            {property.tenure && (
+              <div>
+                <div className="text-xs" style={{ color: 'var(--muted)' }}>Tenure</div>
+                <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>{property.tenure}</div>
+              </div>
+            )}
+            {property.epc && (
+              <div>
+                <div className="text-xs" style={{ color: 'var(--muted)' }}>EPC</div>
+                <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>{property.epc}</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Size & rooms */}
+      {(property.internalArea != null || property.bedrooms != null || property.bathrooms != null ||
+        property.livingRooms != null || property.hasOffice || property.hasGym || property.hasBasement) && (
+        <div className="mb-6 rounded-2xl p-4" style={{ border: '1px solid var(--border)', background: '#fff' }}>
+          <div className="text-xs font-medium mb-3 uppercase tracking-wider" style={{ color: 'var(--muted)' }}>Size & rooms</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {property.internalArea != null && (
+              <div>
+                <div className="text-xs" style={{ color: 'var(--muted)' }}>Internal area</div>
+                <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>
+                  {property.internalArea} {property.internalAreaUnit ?? 'sqft'}
+                  <span className="text-xs ml-1" style={{ color: 'var(--muted)' }}>
+                    ({property.internalAreaUnit === 'sqm'
+                      ? `${Math.round(property.internalArea * 10.764)} sqft`
+                      : `${(property.internalArea / 10.764).toFixed(1)} sqm`})
+                  </span>
+                </div>
+              </div>
+            )}
+            {property.bedrooms != null && (
+              <div>
+                <div className="text-xs" style={{ color: 'var(--muted)' }}>Bedrooms</div>
+                <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>{property.bedrooms}</div>
+              </div>
+            )}
+            {property.bathrooms != null && (
+              <div>
+                <div className="text-xs" style={{ color: 'var(--muted)' }}>Bathrooms</div>
+                <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>{property.bathrooms}</div>
+              </div>
+            )}
+            {property.livingRooms != null && (
+              <div>
+                <div className="text-xs" style={{ color: 'var(--muted)' }}>Living rooms</div>
+                <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>{property.livingRooms}</div>
+              </div>
+            )}
+          </div>
+          {(property.hasOffice || property.hasGym || property.hasBasement) && (
+            <div className="flex gap-2 mt-4 flex-wrap">
+              {property.hasOffice   && <span className="text-xs px-3 py-1 rounded-full" style={{ background: 'var(--blue-soft)', color: 'var(--blue-text)' }}>Office</span>}
+              {property.hasGym      && <span className="text-xs px-3 py-1 rounded-full" style={{ background: 'var(--blue-soft)', color: 'var(--blue-text)' }}>Gym</span>}
+              {property.hasBasement && <span className="text-xs px-3 py-1 rounded-full" style={{ background: 'var(--blue-soft)', color: 'var(--blue-text)' }}>Basement</span>}
+            </div>
+          )}
+        </div>
+      )}
+
+      {['Detached House', 'Land', 'Estate', 'Farm'].includes((property as any).propertyType) && (
+        <BuildingsPanel propertyId={params.id} />
+      )}
+
+      {/* Notes — after buildings */}
       {property.notes && (
         <div className="mb-5 p-4 rounded-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
           <div className="text-xs font-medium mb-1.5 uppercase tracking-wider" style={{ color: 'var(--muted)' }}>Notes</div>
           <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--ink)' }}>{property.notes}</p>
         </div>
       )}
+
+      <DocumentsPanel propertyId={params.id} />
 
       <EvaluatePanel
         propertyId={params.id}
@@ -292,8 +385,6 @@ export default async function PropertyPage({ params }: { params: { id: string } 
         formula={f as any}
         userId={userId}
       />
-
-      <DocumentsPanel propertyId={params.id} />
 
       {isOwner && (
         <div className="mt-8">

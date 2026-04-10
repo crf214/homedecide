@@ -125,29 +125,25 @@ export default function CompareView({ properties, criteria, allRatings, formula 
   return (
     <div>
       {/* Property selector */}
-      <div className="mb-8" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
+      <div className="mb-4" style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         {properties.map(p => {
           const s = getScore(p.id)
           const sel = selected.includes(p.id)
           return (
             <button key={p.id} onClick={() => toggle(p.id)}
-              className="text-left rounded-2xl overflow-hidden transition-all"
+              className="text-left rounded-xl px-3 py-2 transition-all"
               style={{
-                border:   sel ? '2px solid var(--ink)' : '1px solid var(--border)',
+                border:     sel ? '2px solid var(--ink)' : '1px solid var(--border)',
                 background: sel ? 'var(--surface)' : '#fff',
-                opacity: !sel && selected.length >= MAX_COMPARE ? 0.5 : 1,
+                opacity:    !sel && selected.length >= MAX_COMPARE ? 0.4 : 1,
+                width: 140, height: 62,
+                display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                overflow: 'hidden',
               }}>
-              <div className="h-20" style={{ background: 'var(--surface)' }}>
-                {p.photos?.[0]
-                  ? <img src={p.photos[0]} alt="" className="w-full h-full object-cover" />
-                  : <div className="w-full h-full flex items-center justify-center text-xs" style={{ color: 'var(--muted)' }}>No photo</div>
-                }
-              </div>
-              <div className="p-3">
-                <div className="text-xs font-medium truncate" style={{ color: 'var(--ink)' }}>{p.address}</div>
-                <div className={`text-xs mt-1 font-medium ${s.total !== null ? scoreBg(s.total, formula.normalise) : 'text-stone-400'} inline-block px-2 py-0.5 rounded-full`}>
-                  {s.total ?? 'unrated'}
-                </div>
+              <div className="text-xs font-medium truncate" style={{ color: 'var(--ink)' }}>{p.address}</div>
+              <div className={`text-xs font-medium ${s.total !== null ? scoreBg(s.total, formula.normalise) : 'text-stone-400'} inline-block px-2 py-0.5 rounded-full`}
+                style={{ alignSelf: 'flex-start' }}>
+                {s.total ?? 'unrated'}
               </div>
             </button>
           )
@@ -163,11 +159,16 @@ export default function CompareView({ properties, criteria, allRatings, formula 
           </p>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 260px)', minHeight: 320, position: 'relative' }}>
           <table className="w-full" style={{ borderCollapse: 'separate', borderSpacing: 0, minWidth: 500 }}>
             <thead>
-              <tr>
-                <th className="text-left pb-4 pr-4" style={{ color: 'var(--muted)', fontSize: 12, fontWeight: 500, minWidth: 160 }}>
+              <tr style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                <th className="text-left pr-4" style={{
+                  color: 'var(--muted)', fontSize: 12, fontWeight: 500, minWidth: 160,
+                  position: 'sticky', top: 0, left: 0, background: '#fff', zIndex: 11,
+                  verticalAlign: 'bottom', paddingBottom: 12,
+                  borderBottom: '2px solid var(--border)',
+                }}>
                   Criterion
                 </th>
                 {selectedProps.map(p => {
@@ -177,27 +178,47 @@ export default function CompareView({ properties, criteria, allRatings, formula 
                     ? { value: Math.round(p.price / p.internalArea), unit: p.internalAreaUnit === 'sqm' ? '/sqm' : '/sqft' }
                     : null
                   return (
-                    <th key={p.id} className="pb-4 px-3 text-center" style={{ minWidth: 140 }}>
-                      <div className="text-xs font-medium truncate" style={{ color: 'var(--ink)', maxWidth: 130 }}>{p.address}</div>
-                      {p.neighbourhood && (
-                        <div style={{ marginTop: 3 }}>
-                          <span style={{ ...neighbourhoodPillStyle, ...getNeighbourhoodColor(p.neighbourhood), fontSize: '11px', padding: '1px 8px' }}>
-                            {[p.neighbourhood, p.neighbourhoodSub].filter(Boolean).join(' · ')}
-                          </span>
-                        </div>
-                      )}
-                      {p.price && (
-                        <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)', marginTop: 2 }}>
-                          {sym}{p.price.toLocaleString('en-GB')}
-                        </div>
-                      )}
-                      {pricePerArea && (
-                        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
-                          {sym}{pricePerArea.value.toLocaleString('en-GB')}{pricePerArea.unit}
-                        </div>
-                      )}
-                      <div className={`text-sm font-medium inline-block px-3 py-1 rounded-full ${s.total !== null ? scoreBg(s.total, formula.normalise) : 'bg-stone-100 text-stone-400'}`} style={{ marginTop: 2 }}>
-                        {s.total ?? '—'} / {formula.normalise}
+                    <th key={p.id} className="px-3 text-center" style={{
+                      minWidth: 150,
+                      position: 'sticky', top: 0, background: '#fff',
+                      borderBottom: '2px solid var(--border)',
+                      paddingBottom: 12,
+                    }}>
+                      {/* Name — always present */}
+                      <div style={{ minHeight: 20, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <span className="text-xs font-medium truncate" style={{ color: 'var(--ink)', maxWidth: 130, display: 'block' }}>{p.address}</span>
+                      </div>
+                      {/* Property type — always present, empty slot if missing */}
+                      <div style={{ minHeight: 16, marginTop: 2, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        {(p as any).propertyType && (
+                          <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{(p as any).propertyType}</span>
+                        )}
+                      </div>
+                      {/* Neighbourhood — always present, empty slot if missing */}
+                      <div style={{ minHeight: 22, marginTop: 3, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        {p.neighbourhood
+                          ? <span style={{ ...neighbourhoodPillStyle, ...getNeighbourhoodColor(p.neighbourhood), fontSize: '11px', padding: '1px 8px' }}>
+                              {[p.neighbourhood, p.neighbourhoodSub].filter(Boolean).join(' · ')}
+                            </span>
+                          : null}
+                      </div>
+                      {/* Price — always present, dash if missing */}
+                      <div style={{ minHeight: 20, marginTop: 2, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        {p.price
+                          ? <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)' }}>{sym}{p.price.toLocaleString('en-GB')}</span>
+                          : <span style={{ fontSize: 12, color: 'var(--border)' }}>—</span>}
+                      </div>
+                      {/* Price per area — always present, dash if missing */}
+                      <div style={{ minHeight: 18, marginTop: 2, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        {pricePerArea
+                          ? <span style={{ fontSize: 11, color: 'var(--muted)' }}>{sym}{pricePerArea.value.toLocaleString('en-GB')}{pricePerArea.unit}</span>
+                          : <span style={{ fontSize: 11, color: 'var(--border)' }}>—</span>}
+                      </div>
+                      {/* Score — always present */}
+                      <div style={{ marginTop: 4, display: 'flex', justifyContent: 'center' }}>
+                        <span className={`text-sm font-medium inline-block px-3 py-1 rounded-full ${s.total !== null ? scoreBg(s.total, formula.normalise) : 'bg-stone-100 text-stone-400'}`}>
+                          {s.total ?? '—'} / {formula.normalise}
+                        </span>
                       </div>
                     </th>
                   )
@@ -218,7 +239,7 @@ export default function CompareView({ properties, criteria, allRatings, formula 
                     const w = winner(c.id)
                     return (
                       <tr key={c.id} className="hover:bg-stone-50 transition-colors">
-                        <td className="py-3 pr-4" style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td className="py-3 pr-4" style={{ borderBottom: '1px solid var(--border)', position: 'sticky', left: 0, background: '#fff', zIndex: 1 }}>
                           <div className="text-sm" style={{ color: 'var(--ink)' }}>{c.name}</div>
                           <div className="text-xs" style={{ color: 'var(--muted)' }}>×{c.weight} weight</div>
                         </td>

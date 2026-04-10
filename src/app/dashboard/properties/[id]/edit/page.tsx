@@ -63,6 +63,13 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
           </div>
         </div>
 
+        {/* Save button */}
+        <button type="submit" form="property-form"
+          className="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium"
+          style={{ background: 'var(--ink)', color: '#fff' }}>
+          Save changes
+        </button>
+
         {/* Neutral "Editing" ring */}
         <div style={{
           flexShrink: 0, width: '40px', height: '40px', borderRadius: '9999px',
@@ -78,6 +85,7 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
         <div className="mb-8">
           <h1 className="font-display text-3xl" style={{ color: 'var(--ink)' }}>Edit property</h1>
         </div>
+        <div className="mt-8">
         <PropertyForm property={{
           ...property,
           price:        property.price ?? undefined,
@@ -89,7 +97,14 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
           notes:            property.notes ?? undefined,
           neighbourhood:    property.neighbourhood ?? undefined,
           neighbourhoodSub: property.neighbourhoodSub ?? undefined,
+          propertyType:          (property as any).propertyType ?? undefined,
+          isNewBuild:            (property as any).isNewBuild ?? undefined,
+          floorInBuilding:       (property as any).floorInBuilding ?? undefined,
+          totalFloorsInBuilding: (property as any).totalFloorsInBuilding ?? undefined,
+          isTopFloor:            (property as any).isTopFloor ?? undefined,
+          hasLift:               (property as any).hasLift ?? undefined,
         }} />
+        </div>
       </div>
     </>
   )

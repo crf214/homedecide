@@ -32,7 +32,7 @@ export default async function EvaluatePage() {
       <div className="mb-8">
         <h1 className="font-display text-3xl" style={{ color: 'var(--ink)' }}>Compare properties</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>
-          Select up to 3 properties to compare side by side
+          Select up to 5 properties to compare side by side
         </p>
       </div>
       <CompareView

@@ -219,7 +219,7 @@ function SortableRow({ criterion: c, isEditing, onEdit, formProps }: SortableRow
       >
         <div style={{ overflow: 'hidden' }}>
           <div className="pt-2">
-            <CriterionForm {...formProps} />
+            <CriterionForm key={formProps.initial?.id ?? 'new'} {...formProps} />
           </div>
         </div>
       </div>

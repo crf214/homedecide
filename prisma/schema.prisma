@@ -64,6 +64,13 @@ model Property {
   neighbourhood    String?
   neighbourhoodSub String?
 
+  propertyType          String?
+  isNewBuild            Boolean? @default(false)
+  floorInBuilding       Int?
+  totalFloorsInBuilding Int?
+  isTopFloor            Boolean? @default(false)
+  hasLift               Boolean? @default(false)
+
   mapsUrl     String?
   listingLinks Json     @default("[]")
 
@@ -74,6 +81,9 @@ model Property {
   shares       PropertyShare[]
   documents    PropertyDocument[]
   activityLogs PropertyActivityLog[]
+  buildings    PropertyBuilding[]
+  floors       PropertyFloor[]
+  rooms        PropertyRoom[]
 
   @@map("properties")
 }
@@ -178,4 +188,53 @@ model PropertyActivityLog {
   createdAt   DateTime @default(now())
 
   @@map("property_activity_logs")
+}
+
+model PropertyBuilding {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  name       String?
+  totalUnits Int?
+  yearBuilt  Int?
+  condition  String?
+  notes      String?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("property_buildings")
+}
+
+model PropertyFloor {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  floorNumber Int?
+  description String?
+  notes       String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("property_floors")
+}
+
+model PropertyRoom {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  name       String
+  roomType   String?
+  area       Float?
+  areaUnit   String?  @default("sqft")
+  notes      String?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("property_rooms")
 }

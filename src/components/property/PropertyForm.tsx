@@ -1,11 +1,14 @@
 'use client'
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import BuildingsPanel from '@/components/property/BuildingsPanel'
 
 interface ListingLink {
   label: string
   url: string
 }
+
+const MULTI_BUILDING_TYPES = ['Detached House', 'Land', 'Estate', 'Farm']
 
 interface Props {
   property?: {
@@ -38,9 +41,16 @@ interface Props {
     gardenMaintenance?: string | null
     neighbourhood?: string | null
     neighbourhoodSub?: string | null
+    propertyType?: string | null
+    isNewBuild?: boolean | null
+    floorInBuilding?: number | null
+    totalFloorsInBuilding?: number | null
+    isTopFloor?: boolean | null
+    hasLift?: boolean | null
   }
 }
 
+const PROPERTY_TYPES = ['Detached House', 'Semi Detached House', 'Terraced / Row House', 'Townhouse', 'Apartment', 'Land', 'Estate', 'Farm']
 const CURRENCIES   = ['GBP', 'USD', 'EUR', 'CHF']
 const TENURES      = ['Freehold', 'Leasehold', 'Share of freehold', 'Commonhold']
 const EPCS         = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
@@ -137,25 +147,74 @@ export default function PropertyForm({ property }: Props) {
   const [gardenMaintenance, setGardenMaintenance] = useState(property?.gardenMaintenance ?? '')
   const [neighbourhood, setNeighbourhood] = useState(property?.neighbourhood ?? '')
   const [neighbourhoodSub, setNeighbourhoodSub] = useState(property?.neighbourhoodSub ?? '')
+  const [propertyType, setPropertyType] = useState(property?.propertyType ?? '')
+  const [isNewBuild, setIsNewBuild] = useState(property?.isNewBuild ?? false)
+  const [floorInBuilding, setFloorInBuilding] = useState(property?.floorInBuilding?.toString() ?? '')
+  const [totalFloorsInBuilding, setTotalFloorsInBuilding] = useState(property?.totalFloorsInBuilding?.toString() ?? '')
+  const [isTopFloor, setIsTopFloor] = useState(property?.isTopFloor ?? false)
+  const [hasLift, setHasLift] = useState(property?.hasLift ?? false)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [uploadingPhotos, setUploadingPhotos] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
-    setNewPhotoFiles(prev => [...prev, ...files])
-    files.forEach(f => {
-      const r = new FileReader()
-      r.onload = ev => setPhotos(prev => [...prev, ev.target!.result as string])
-      r.readAsDataURL(f)
-    })
+    if (!files.length) return
+    if (fileRef.current) fileRef.current.value = ''
+
+    if (isEdit && property?.id) {
+      // Edit mode: upload immediately, all files at once
+      setUploadingPhotos(true)
+      try {
+        const fd = new FormData()
+        files.forEach(f => fd.append('photos', f))
+        const res = await fetch(`/api/properties/${property.id}/photos`, { method: 'POST', body: fd })
+        if (res.ok) {
+          const j = await res.json()
+          setPhotos(j.data)
+        }
+      } finally {
+        setUploadingPhotos(false)
+      }
+    } else {
+      // New property: collect locally, upload on save
+      setNewPhotoFiles(prev => [...prev, ...files])
+      files.forEach(f => {
+        const r = new FileReader()
+        r.onload = ev => setPhotos(prev => [...prev, ev.target!.result as string])
+        r.readAsDataURL(f)
+      })
+    }
   }
 
-  function removePhoto(idx: number) {
+  async function removePhoto(idx: number) {
+    const src = photos[idx]
+    if (isEdit && property?.id && !src.startsWith('data:')) {
+      await fetch(`/api/properties/${property.id}/photos`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: src }),
+      })
+    } else {
+      const ec = (property?.photos ?? []).length
+      if (idx >= ec) setNewPhotoFiles(prev => prev.filter((_, i) => i !== idx - ec))
+    }
     setPhotos(prev => prev.filter((_, i) => i !== idx))
-    const ec = (property?.photos ?? []).length
-    if (idx >= ec) setNewPhotoFiles(prev => prev.filter((_, i) => i !== idx - ec))
+  }
+
+  async function setThumbnail(idx: number) {
+    if (idx === 0) return
+    const reordered = [photos[idx], ...photos.filter((_, i) => i !== idx)]
+    setPhotos(reordered)
+    if (isEdit && property?.id) {
+      await fetch(`/api/properties/${property.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photos: reordered.filter(p => !p.startsWith('data:')) }),
+      })
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -192,6 +251,12 @@ export default function PropertyForm({ property }: Props) {
         gardenMaintenance: gardenMaintenance || null,
         neighbourhood: neighbourhood.trim() || null,
         neighbourhoodSub: neighbourhoodSub.trim() || null,
+        propertyType: propertyType || null,
+        isNewBuild,
+        floorInBuilding: floorInBuilding ? parseInt(floorInBuilding) : null,
+        totalFloorsInBuilding: totalFloorsInBuilding ? parseInt(totalFloorsInBuilding) : null,
+        isTopFloor,
+        hasLift,
       }
       let propId = property?.id
       if (isEdit) {
@@ -206,7 +271,7 @@ export default function PropertyForm({ property }: Props) {
         if (!res.ok) { const j = await res.json(); setError(j.error); return }
         const j = await res.json(); propId = j.data.id
       }
-      if (newPhotoFiles.length > 0 && propId) {
+      if (!isEdit && newPhotoFiles.length > 0 && propId) {
         const fd = new FormData()
         newPhotoFiles.forEach(f => fd.append('photos', f))
         await fetch(`/api/properties/${propId}/photos`, { method: 'POST', body: fd })
@@ -230,8 +295,24 @@ export default function PropertyForm({ property }: Props) {
 
   const hasGarden = gardenType && gardenType !== 'none'
 
+  async function handlePropertyTypeChange(newType: string) {
+    const resultingType = propertyType === newType ? '' : newType
+    const label = resultingType ? `"${resultingType}"` : 'no type'
+    if (!confirm(`Change property type to ${label}?`)) return
+
+    const wasMultiBuilding = MULTI_BUILDING_TYPES.includes(propertyType)
+    const willBeMultiBuilding = MULTI_BUILDING_TYPES.includes(resultingType)
+
+    if (isEdit && property?.id && wasMultiBuilding && !willBeMultiBuilding) {
+      if (!confirm('This property type does not support multiple buildings. All building records will be permanently deleted. Continue?')) return
+      await fetch(`/api/properties/${property.id}/buildings`, { method: 'DELETE' })
+    }
+
+    setPropertyType(resultingType)
+  }
+
   return (
-    <form onSubmit={handleSubmit}>
+    <form id="property-form" onSubmit={handleSubmit}>
       {error && (
         <div className="px-4 py-3 rounded-xl text-sm mb-4" style={{ background: 'var(--red-soft)', color: 'var(--red-text)' }}>
           {error}
@@ -275,6 +356,57 @@ export default function PropertyForm({ property }: Props) {
             className={iCls} style={iSty} placeholder="e.g. World's End, Sloane Square" />
         </div>
       </div>
+
+      <div style={sSty}>
+        <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--ink)' }}>Property type</h3>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {PROPERTY_TYPES.map(t => (
+            <button key={t} type="button" onClick={() => handlePropertyTypeChange(t)}
+              className="px-4 py-1.5 rounded-lg text-sm"
+              style={{
+                background: propertyType === t ? 'var(--ink)' : 'var(--surface)',
+                color: propertyType === t ? '#fff' : 'var(--muted)',
+                border: `1px solid ${propertyType === t ? 'var(--ink)' : 'var(--border)'}`,
+              }}>
+              {t}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-6 mb-1">
+          <div>
+            <label style={lSty}>New build?</label>
+            <Toggle value={isNewBuild ?? false} onChange={setIsNewBuild} />
+          </div>
+        </div>
+        {propertyType === 'Apartment' && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
+            <div>
+              <label style={lSty}>Floor in building</label>
+              <input type="number" value={floorInBuilding} onChange={e => setFloorInBuilding(e.target.value)}
+                className={iCls} style={iSty} placeholder="e.g. 3" min="0" />
+            </div>
+            <div>
+              <label style={lSty}>Total floors in building</label>
+              <input type="number" value={totalFloorsInBuilding} onChange={e => setTotalFloorsInBuilding(e.target.value)}
+                className={iCls} style={iSty} placeholder="e.g. 8" min="1" />
+            </div>
+            <div>
+              <label style={lSty}>Top floor?</label>
+              <Toggle value={isTopFloor ?? false} onChange={setIsTopFloor} />
+            </div>
+            <div>
+              <label style={lSty}>Has lift?</label>
+              <Toggle value={hasLift ?? false} onChange={setHasLift} />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {isEdit && property?.id && MULTI_BUILDING_TYPES.includes(propertyType) && (
+        <div style={sSty}>
+          <BuildingsPanel propertyId={property.id} />
+        </div>
+      )}
 
       <div style={sSty}>
         <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--ink)' }}>Price & tenure</h3>
@@ -437,11 +569,32 @@ export default function PropertyForm({ property }: Props) {
 
       <div style={sSty}>
         <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--ink)' }}>Photos</h3>
-        <div className="flex flex-wrap gap-3 mb-3">
+        {uploadingPhotos && (
+          <div className="text-xs mb-3 px-3 py-2 rounded-lg" style={{ background: 'var(--surface)', color: 'var(--muted)', border: '1px solid var(--border)' }}>
+            Uploading photos…
+          </div>
+        )}
+        <div className="flex flex-wrap gap-3 mb-2">
           {photos.map((src, i) => (
-            <div key={i} className="relative group">
-              <img src={src} alt="" className="w-24 h-20 object-cover rounded-xl"
-                style={{ border: '1px solid var(--border)' }} />
+            <div key={i} className="relative group flex-shrink-0">
+              <img src={src} alt="" className="w-28 h-24 object-cover rounded-xl"
+                style={{ border: i === 0 ? '2px solid var(--ink)' : '1px solid var(--border)' }} />
+              {/* Thumbnail badge — always visible on first photo */}
+              {i === 0 && (
+                <span className="absolute bottom-1.5 left-1.5 rounded-md font-medium"
+                  style={{ background: 'var(--ink)', color: '#fff', fontSize: 10, padding: '2px 6px' }}>
+                  Thumbnail
+                </span>
+              )}
+              {/* Set as thumbnail — visible on hover for non-first photos */}
+              {i !== 0 && (
+                <button type="button" onClick={() => setThumbnail(i)}
+                  className="absolute bottom-1.5 left-1.5 rounded-md font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ background: 'rgba(0,0,0,0.65)', color: '#fff', fontSize: 10, padding: '2px 6px', border: 'none', cursor: 'pointer' }}>
+                  Set thumbnail
+                </button>
+              )}
+              {/* Remove */}
               <button type="button" onClick={() => removePhoto(i)}
                 className="absolute top-1 right-1 w-5 h-5 rounded-full text-xs items-center justify-center hidden group-hover:flex"
                 style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}>
@@ -450,12 +603,18 @@ export default function PropertyForm({ property }: Props) {
             </div>
           ))}
           <button type="button" onClick={() => fileRef.current?.click()}
-            className="w-24 h-20 rounded-xl flex flex-col items-center justify-center gap-1 text-xs"
-            style={{ border: '1.5px dashed var(--border)', color: 'var(--muted)' }}>
+            disabled={uploadingPhotos}
+            className="w-28 h-24 rounded-xl flex flex-col items-center justify-center gap-1 text-xs flex-shrink-0"
+            style={{ border: '1.5px dashed var(--border)', color: 'var(--muted)', opacity: uploadingPhotos ? 0.5 : 1 }}>
             <span style={{ fontSize: 20 }}>+</span>
             Add photos
           </button>
         </div>
+        <p className="text-xs" style={{ color: 'var(--muted)' }}>
+          {isEdit
+            ? 'Photos upload immediately. Hover any photo to set it as thumbnail or remove it.'
+            : 'Photos are saved when you submit the form. The first photo becomes the thumbnail.'}
+        </p>
         <input ref={fileRef} type="file" multiple accept="image/*"
           onChange={handleFileChange} className="hidden" />
       </div>

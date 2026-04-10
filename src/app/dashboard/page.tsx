@@ -29,11 +29,18 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-8 max-w-4xl fade-up">
-      <div className="mb-8">
-        <h1 className="font-display text-3xl mb-1" style={{ color: 'var(--ink)' }}>
-          Good to see you{session.name ? `, ${session.name}` : ''}.
-        </h1>
-        <p style={{ color: 'var(--muted)', fontSize: 15 }}>Your property search at a glance</p>
+      <div className="flex items-start justify-between mb-8">
+        <div>
+          <h1 className="font-display text-3xl mb-1" style={{ color: 'var(--ink)' }}>
+            Good to see you{session.name ? `, ${session.name}` : ''}.
+          </h1>
+          <p style={{ color: 'var(--muted)', fontSize: 15 }}>Your property search at a glance</p>
+        </div>
+        <Link href="/dashboard/properties/new"
+          className="px-5 py-2.5 rounded-xl text-sm font-medium flex-shrink-0"
+          style={{ background: 'var(--ink)', color: '#fff' }}>
+          + Add property
+        </Link>
       </div>
 
       {/* Stats */}
