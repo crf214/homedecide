@@ -18,7 +18,6 @@ interface Props {
     postcode?: string | null
     price?: number | null
     currency: string
-    listingUrl?: string | null
     mapsUrl?: string | null
     listingLinks?: ListingLink[] | null
     tenure?: string | null
@@ -122,7 +121,6 @@ export default function PropertyForm({ property }: Props) {
   const [mapsUrl, setMapsUrl] = useState(property?.mapsUrl ?? '')
   const [price, setPrice] = useState(property?.price?.toString() ?? '')
   const [currency, setCurrency] = useState(property?.currency ?? 'GBP')
-  const [listingUrl] = useState(property?.listingUrl ?? '')
   const [listingLinks, setListingLinks] = useState<ListingLink[]>(
     property?.listingLinks ?? []
   )
@@ -153,6 +151,11 @@ export default function PropertyForm({ property }: Props) {
   const [totalFloorsInBuilding, setTotalFloorsInBuilding] = useState(property?.totalFloorsInBuilding?.toString() ?? '')
   const [isTopFloor, setIsTopFloor] = useState(property?.isTopFloor ?? false)
   const [hasLift, setHasLift] = useState(property?.hasLift ?? false)
+  const [hasFrontDesk, setHasFrontDesk] = useState((property as any)?.hasFrontDesk ?? false)
+  const [hasPool, setHasPool] = useState((property as any)?.hasPool ?? false)
+  const [hasGarage, setHasGarage] = useState((property as any)?.hasGarage ?? false)
+  const [hasSharedGym, setHasSharedGym] = useState((property as any)?.hasSharedGym ?? false)
+  const [hasSharedGarden, setHasSharedGarden] = useState((property as any)?.hasSharedGarden ?? false)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -228,7 +231,6 @@ export default function PropertyForm({ property }: Props) {
         postcode: postcode.trim() || null,
         price: price ? parseFloat(price) : null,
         currency,
-        listingUrl: listingUrl.trim() || null,
         mapsUrl: mapsUrl.trim() || null,
         listingLinks: listingLinks.filter(l => l.url.trim()),
         tenure: tenure || null,
@@ -257,6 +259,11 @@ export default function PropertyForm({ property }: Props) {
         totalFloorsInBuilding: totalFloorsInBuilding ? parseInt(totalFloorsInBuilding) : null,
         isTopFloor,
         hasLift,
+        hasFrontDesk,
+        hasPool,
+        hasGarage,
+        hasSharedGym,
+        hasSharedGarden,
       }
       let propId = property?.id
       if (isEdit) {
@@ -306,6 +313,21 @@ export default function PropertyForm({ property }: Props) {
     if (isEdit && property?.id && wasMultiBuilding && !willBeMultiBuilding) {
       if (!confirm('This property type does not support multiple buildings. All building records will be permanently deleted. Continue?')) return
       await fetch(`/api/properties/${property.id}/buildings`, { method: 'DELETE' })
+    }
+
+    // Clear apartment-specific fields when leaving Apartment type
+    const wasApartment = propertyType === 'Apartment'
+    const willBeApartment = resultingType === 'Apartment'
+    if (wasApartment && !willBeApartment) {
+      setFloorInBuilding('')
+      setTotalFloorsInBuilding('')
+      setIsTopFloor(false)
+      setHasLift(false)
+      setHasFrontDesk(false)
+      setHasPool(false)
+      setHasGarage(false)
+      setHasSharedGym(false)
+      setHasSharedGarden(false)
     }
 
     setPropertyType(resultingType)
@@ -379,24 +401,50 @@ export default function PropertyForm({ property }: Props) {
           </div>
         </div>
         {propertyType === 'Apartment' && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-            <div>
-              <label style={lSty}>Floor in building</label>
-              <input type="number" value={floorInBuilding} onChange={e => setFloorInBuilding(e.target.value)}
-                className={iCls} style={iSty} placeholder="e.g. 3" min="0" />
+          <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
+            <div className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: 'var(--muted)' }}>
+              Building characteristics
+              <span className="ml-2 normal-case font-normal" style={{ color: 'var(--border)' }}>about the building this unit is in</span>
             </div>
-            <div>
-              <label style={lSty}>Total floors in building</label>
-              <input type="number" value={totalFloorsInBuilding} onChange={e => setTotalFloorsInBuilding(e.target.value)}
-                className={iCls} style={iSty} placeholder="e.g. 8" min="1" />
-            </div>
-            <div>
-              <label style={lSty}>Top floor?</label>
-              <Toggle value={isTopFloor ?? false} onChange={setIsTopFloor} />
-            </div>
-            <div>
-              <label style={lSty}>Has lift?</label>
-              <Toggle value={hasLift ?? false} onChange={setHasLift} />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <label style={lSty}>Floor this unit is on</label>
+                <input type="number" value={floorInBuilding} onChange={e => setFloorInBuilding(e.target.value)}
+                  className={iCls} style={iSty} placeholder="e.g. 3" min="0" />
+              </div>
+              <div>
+                <label style={lSty}>Total floors in building</label>
+                <input type="number" value={totalFloorsInBuilding} onChange={e => setTotalFloorsInBuilding(e.target.value)}
+                  className={iCls} style={iSty} placeholder="e.g. 8" min="1" />
+              </div>
+              <div>
+                <label style={lSty}>Top floor unit</label>
+                <Toggle value={isTopFloor ?? false} onChange={setIsTopFloor} />
+              </div>
+              <div>
+                <label style={lSty}>Building has lift</label>
+                <Toggle value={hasLift ?? false} onChange={setHasLift} />
+              </div>
+              <div>
+                <label style={lSty}>Front desk / security</label>
+                <Toggle value={hasFrontDesk ?? false} onChange={setHasFrontDesk} />
+              </div>
+              <div>
+                <label style={lSty}>Pool</label>
+                <Toggle value={hasPool ?? false} onChange={setHasPool} />
+              </div>
+              <div>
+                <label style={lSty}>Garage</label>
+                <Toggle value={hasGarage ?? false} onChange={setHasGarage} />
+              </div>
+              <div>
+                <label style={lSty}>Shared gym</label>
+                <Toggle value={hasSharedGym ?? false} onChange={setHasSharedGym} />
+              </div>
+              <div>
+                <label style={lSty}>Shared garden</label>
+                <Toggle value={hasSharedGarden ?? false} onChange={setHasSharedGarden} />
+              </div>
             </div>
           </div>
         )}
@@ -499,7 +547,7 @@ export default function PropertyForm({ property }: Props) {
         <div className="grid grid-cols-3 gap-6">
           {[
             { label: 'Office space', val: hasOffice, set: setHasOffice },
-            { label: 'Gym space', val: hasGym, set: setHasGym },
+            { label: 'Gym (Private)', val: hasGym, set: setHasGym },
             { label: 'Basement', val: hasBasement, set: setHasBasement },
           ].map(f => (
             <div key={f.label}>
@@ -517,7 +565,7 @@ export default function PropertyForm({ property }: Props) {
             <label style={lSty}>Type</label>
             <select value={gardenType} onChange={e => setGardenType(e.target.value)} className={iCls} style={iSty}>
               <option value="">Select…</option>
-              {GARDEN_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+              {GARDEN_TYPES.map(t => <option key={t} value={t}>{t === 'garden' ? 'Garden (private)' : t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
             </select>
           </div>
           <div>

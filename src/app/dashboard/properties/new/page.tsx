@@ -1,5 +1,4 @@
 'use client'
-// src/app/dashboard/properties/new/page.tsx
 import PropertyForm from '@/components/property/PropertyForm'
 
 export default function NewPropertyPage() {

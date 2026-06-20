@@ -25,11 +25,21 @@ export default async function RankingsPage() {
     ...sharedProps.map(s => s.property),
   ]
 
-  const scored = await Promise.all(allProps.map(async p => {
-    const ratings = await prisma.rating.findMany({ where: { userId, propertyId: p.id } })
+  const propIds = allProps.map(p => p.id)
+  const allRatings = propIds.length > 0
+    ? await prisma.rating.findMany({ where: { userId, propertyId: { in: propIds } } })
+    : []
+  const ratingsByProp = allRatings.reduce((acc, r) => {
+    if (!acc[r.propertyId]) acc[r.propertyId] = []
+    acc[r.propertyId].push(r)
+    return acc
+  }, {} as Record<string, typeof allRatings>)
+
+  const scored = allProps.map(p => {
+    const ratings = ratingsByProp[p.id] ?? []
     const breakdown = calcScore(criteria as any, ratings as any, f as any, userId)
     return { ...p, score: breakdown.total, ratedCount: breakdown.ratedCount, requiredCount: breakdown.requiredCount, byCategory: breakdown.byCategory }
-  }))
+  })
 
   const sorted = scored.sort((a, b) => (b.score ?? -1) - (a.score ?? -1))
   const cats   = [...new Set(criteria.map(c => c.category))]

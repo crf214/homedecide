@@ -26,11 +26,21 @@ export default async function PropertiesPage() {
     ...shared.map(s => ({ ...s.property, isShared: true, sharedBy: s.sharedBy.name ?? s.sharedBy.email })),
   ]
 
-  const scored = await Promise.all(allProps.map(async p => {
-    const ratings = await prisma.rating.findMany({ where: { userId, propertyId: p.id } })
+  const propIds = allProps.map(p => p.id)
+  const allRatings = propIds.length > 0
+    ? await prisma.rating.findMany({ where: { userId, propertyId: { in: propIds } } })
+    : []
+  const ratingsByProp = allRatings.reduce((acc, r) => {
+    if (!acc[r.propertyId]) acc[r.propertyId] = []
+    acc[r.propertyId].push(r)
+    return acc
+  }, {} as Record<string, typeof allRatings>)
+
+  const scored = allProps.map(p => {
+    const ratings = ratingsByProp[p.id] ?? []
     const breakdown = calcScore(criteria as any, ratings as any, f as any, userId)
     return { ...p, score: breakdown.total, ratedCount: breakdown.ratedCount, requiredCount: breakdown.requiredCount }
-  }))
+  })
 
   return (
     <div className="p-8 max-w-5xl fade-up">

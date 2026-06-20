@@ -12,6 +12,7 @@ model User {
   id            String   @id @default(cuid())
   email         String   @unique
   name          String?
+  avatar        String?
   passwordHash  String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -70,6 +71,11 @@ model Property {
   totalFloorsInBuilding Int?
   isTopFloor            Boolean? @default(false)
   hasLift               Boolean? @default(false)
+  hasFrontDesk          Boolean? @default(false)
+  hasPool               Boolean? @default(false)
+  hasGarage             Boolean? @default(false)
+  hasSharedGym          Boolean? @default(false)
+  hasSharedGarden       Boolean? @default(false)
 
   mapsUrl     String?
   listingLinks Json     @default("[]")
@@ -220,6 +226,27 @@ model PropertyFloor {
   updatedAt   DateTime @updatedAt
 
   @@map("property_floors")
+}
+
+model WatchedListing {
+  id          String   @id @default(cuid())
+  source      String   // scraper key, e.g. "hdwe-residential"
+  externalId  String   // stable listing id from the source
+
+  title       String
+  area        String?
+  bedrooms    Int?
+  bathrooms   Int?
+  priceText   String?
+  url         String
+  desc        String?
+
+  firstSeenAt DateTime  @default(now())
+  alertedAt   DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([source, externalId])
+  @@map("watched_listings")
 }
 
 model PropertyRoom {

@@ -17,14 +17,22 @@ export default async function DashboardPage() {
 
   const f = formula ?? { id: '', userId, mode: 'weighted' as const, normalise: 100, config: {} }
 
-  const scored = await Promise.all(properties.map(async p => {
-    const ratings = await prisma.rating.findMany({ where: { userId, propertyId: p.id } })
+  const propIds = properties.map(p => p.id)
+  const allRatings = propIds.length > 0
+    ? await prisma.rating.findMany({ where: { userId, propertyId: { in: propIds } } })
+    : []
+  const ratingsByProp = allRatings.reduce((acc, r) => {
+    if (!acc[r.propertyId]) acc[r.propertyId] = []
+    acc[r.propertyId].push(r)
+    return acc
+  }, {} as Record<string, typeof allRatings>)
+
+  const scored = properties.map(p => {
+    const ratings = ratingsByProp[p.id] ?? []
     const breakdown = calcScore(criteria as any, ratings as any, f as any, userId)
     return { ...p, score: breakdown.total, ratedCount: breakdown.ratedCount }
-  }))
+  })
 
-  const totalProps = await prisma.property.count({ where: { userId } })
-  const ratedProps = scored.filter(p => p.score !== null).length
   const topProp = scored.sort((a, b) => (b.score ?? -1) - (a.score ?? -1))[0]
 
   return (
@@ -41,20 +49,6 @@ export default async function DashboardPage() {
           style={{ background: 'var(--ink)', color: '#fff' }}>
           + Add property
         </Link>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        {[
-          { label: 'Properties saved', value: totalProps },
-          { label: 'Fully rated', value: ratedProps },
-          { label: 'Criteria defined', value: criteria.length },
-        ].map(s => (
-          <div key={s.label} className="rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-            <div className="text-3xl font-medium mb-1" style={{ color: 'var(--ink)' }}>{s.value}</div>
-            <div className="text-sm" style={{ color: 'var(--muted)' }}>{s.label}</div>
-          </div>
-        ))}
       </div>
 
       {/* Recent properties */}

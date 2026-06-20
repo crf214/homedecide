@@ -205,35 +205,78 @@ export default async function PropertyPage({ params }: { params: { id: string } 
         </div>
       )}
 
-      {/* Property details — building position + garden */}
+      {/* Property details — building characteristics + garden */}
       {((property as any).floorInBuilding != null || (property as any).isTopFloor || (property as any).hasLift ||
+        (property as any).hasFrontDesk || (property as any).hasPool || (property as any).hasGarage || (property as any).hasSharedGym || (property as any).hasSharedGarden ||
         (property.gardenType && property.gardenType !== 'none')) && (
       <div className="mb-6 rounded-2xl p-4" style={{ border: '1px solid var(--border)', background: '#fff' }}>
         <div className="text-xs font-medium mb-3 uppercase tracking-wider" style={{ color: 'var(--muted)' }}>Property details</div>
-        {((property as any).floorInBuilding != null || (property as any).isTopFloor || (property as any).hasLift) && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-            {(property as any).floorInBuilding != null && (
-              <div>
-                <div className="text-xs" style={{ color: 'var(--muted)' }}>Floor</div>
-                <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>
-                  {(property as any).floorInBuilding}
-                  {(property as any).totalFloorsInBuilding != null ? ` of ${(property as any).totalFloorsInBuilding}` : ''}
+        {((property as any).floorInBuilding != null || (property as any).isTopFloor || (property as any).hasLift ||
+          (property as any).hasFrontDesk || (property as any).hasPool || (property as any).hasGarage || (property as any).hasSharedGym || (property as any).hasSharedGarden) && (
+          <>
+            <div className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: 'var(--border)' }}>
+              Building characteristics
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+              {(property as any).floorInBuilding != null && (
+                <div>
+                  <div className="text-xs" style={{ color: 'var(--muted)' }}>Floor this unit is on</div>
+                  <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>
+                    {(property as any).floorInBuilding}
+                    {(property as any).totalFloorsInBuilding != null ? ` of ${(property as any).totalFloorsInBuilding}` : ''}
+                  </div>
                 </div>
-              </div>
-            )}
-            {(property as any).isTopFloor && (
-              <div>
-                <div className="text-xs" style={{ color: 'var(--muted)' }}>Top floor</div>
-                <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>Yes</div>
-              </div>
-            )}
-            {(property as any).hasLift && (
-              <div>
-                <div className="text-xs" style={{ color: 'var(--muted)' }}>Lift</div>
-                <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>Yes</div>
-              </div>
-            )}
-          </div>
+              )}
+              {(property as any).totalFloorsInBuilding != null && (property as any).floorInBuilding == null && (
+                <div>
+                  <div className="text-xs" style={{ color: 'var(--muted)' }}>Total floors in building</div>
+                  <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>{(property as any).totalFloorsInBuilding}</div>
+                </div>
+              )}
+              {(property as any).isTopFloor && (
+                <div>
+                  <div className="text-xs" style={{ color: 'var(--muted)' }}>Top floor unit</div>
+                  <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>Yes</div>
+                </div>
+              )}
+              {(property as any).hasLift && (
+                <div>
+                  <div className="text-xs" style={{ color: 'var(--muted)' }}>Building has lift</div>
+                  <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>Yes</div>
+                </div>
+              )}
+              {(property as any).hasFrontDesk && (
+                <div>
+                  <div className="text-xs" style={{ color: 'var(--muted)' }}>Front desk / security</div>
+                  <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>Yes</div>
+                </div>
+              )}
+              {(property as any).hasPool && (
+                <div>
+                  <div className="text-xs" style={{ color: 'var(--muted)' }}>Pool</div>
+                  <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>Yes</div>
+                </div>
+              )}
+              {(property as any).hasGarage && (
+                <div>
+                  <div className="text-xs" style={{ color: 'var(--muted)' }}>Garage</div>
+                  <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>Yes</div>
+                </div>
+              )}
+              {(property as any).hasSharedGym && (
+                <div>
+                  <div className="text-xs" style={{ color: 'var(--muted)' }}>Shared gym</div>
+                  <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>Yes</div>
+                </div>
+              )}
+              {(property as any).hasSharedGarden && (
+                <div>
+                  <div className="text-xs" style={{ color: 'var(--muted)' }}>Shared garden</div>
+                  <div className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>Yes</div>
+                </div>
+              )}
+            </div>
+          </>
         )}
 
         {property.gardenType && property.gardenType !== 'none' && (

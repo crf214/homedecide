@@ -89,7 +89,6 @@ export default async function EditPropertyPage({ params }: { params: { id: strin
         <PropertyForm property={{
           ...property,
           price:        property.price ?? undefined,
-          listingUrl:   property.listingUrl ?? undefined,
           mapsUrl:      property.mapsUrl ?? undefined,
           listingLinks: (Array.isArray(property.listingLinks) ? property.listingLinks : []) as { label: string; url: string }[],
           tenure:           property.tenure ?? undefined,

@@ -41,6 +41,24 @@ export async function deletePhoto(url: string): Promise<void> {
   await supabaseAdmin.storage.from(BUCKET).remove([path])
 }
 
+export async function uploadAvatar(file: File, userId: string): Promise<string> {
+  const ext = file.name.split('.').pop() ?? 'jpg'
+  const path = `${userId}/avatar.${ext}`
+
+  const arrayBuffer = await file.arrayBuffer()
+  const buffer = new Uint8Array(arrayBuffer)
+
+  const { error } = await supabaseAdmin.storage
+    .from(BUCKET)
+    .upload(path, buffer, { upsert: true, contentType: file.type })
+
+  if (error) throw new Error(`Upload failed: ${error.message}`)
+
+  const { data } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(path)
+  // Bust cache with timestamp
+  return `${data.publicUrl}?t=${Date.now()}`
+}
+
 const DOC_BUCKET = 'property-documents'
 
 export async function uploadDocument(

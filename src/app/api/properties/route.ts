@@ -39,6 +39,11 @@ const createSchema = z.object({
   totalFloorsInBuilding:    z.number().int().optional().nullable(),
   isTopFloor:               z.boolean().optional().nullable(),
   hasLift:                  z.boolean().optional().nullable(),
+  hasFrontDesk:             z.boolean().optional().nullable(),
+  hasPool:                  z.boolean().optional().nullable(),
+  hasGarage:                z.boolean().optional().nullable(),
+  hasSharedGym:             z.boolean().optional().nullable(),
+  hasSharedGarden:          z.boolean().optional().nullable(),
 })
 
 export async function GET() {
