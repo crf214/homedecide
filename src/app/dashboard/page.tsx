@@ -1,13 +1,15 @@
 // src/app/dashboard/page.tsx
 import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { calcScore, scoreBg } from '@/lib/scoring'
 import { getNeighbourhoodColor, neighbourhoodPillStyle } from '@/lib/neighbourhoodColor'
 
 export default async function DashboardPage() {
   const session = await getSession()
-  const userId = session.userId!
+  if (!session.userId) redirect('/auth/login')
+  const userId = session.userId
 
   const [properties, criteria, formula] = await Promise.all([
     prisma.property.findMany({ where: { userId }, orderBy: { updatedAt: 'desc' }, take: 5 }),
