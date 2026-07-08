@@ -2,6 +2,7 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
+import { mediaProxyUrl } from '@/lib/media'
 import Sidebar from '@/components/shared/Sidebar'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -15,7 +16,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar user={{ email: user?.email ?? session.email!, name: user?.name, avatar: user?.avatar }} />
+      <Sidebar user={{ email: user?.email ?? session.email!, name: user?.name, avatar: mediaProxyUrl(user?.avatar) || null }} />
       <main className="flex-1 min-w-0 overflow-auto">
         {children}
       </main>

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { mediaProxyUrl } from '@/lib/media'
 import BuildingsPanel from '@/components/property/BuildingsPanel'
 
 interface ListingLink {
@@ -625,7 +626,7 @@ export default function PropertyForm({ property }: Props) {
         <div className="flex flex-wrap gap-3 mb-2">
           {photos.map((src, i) => (
             <div key={i} className="relative group flex-shrink-0">
-              <img src={src} alt="" className="w-28 h-24 object-cover rounded-xl"
+              <img src={mediaProxyUrl(src)} alt="" className="w-28 h-24 object-cover rounded-xl"
                 style={{ border: i === 0 ? '2px solid var(--ink)' : '1px solid var(--border)' }} />
               {/* Thumbnail badge — always visible on first photo */}
               {i === 0 && (

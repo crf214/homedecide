@@ -4,6 +4,7 @@ import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import { calcScore, scoreBg, CURRENCY_SYMBOLS } from '@/lib/scoring'
 import { getNeighbourhoodColor, neighbourhoodPillStyle } from '@/lib/neighbourhoodColor'
+import { mediaProxyUrl } from '@/lib/media'
 import Link from 'next/link'
 import EvaluatePanel from '@/components/property/EvaluatePanel'
 import SharePanel from '@/components/property/SharePanel'
@@ -198,7 +199,7 @@ export default async function PropertyPage({ params }: { params: { id: string } 
       {property.photos.length > 0 && (
         <div className="flex gap-3 mb-6 overflow-x-auto pb-2">
           {property.photos.map((src, i) => (
-            <img key={i} src={src} alt=""
+            <img key={i} src={mediaProxyUrl(src)} alt=""
               className="h-48 w-auto flex-shrink-0 rounded-2xl object-cover"
               style={{ border: '1px solid var(--border)' }} />
           ))}

@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { calcScore, scoreBg } from '@/lib/scoring'
 import { getNeighbourhoodColor, neighbourhoodPillStyle } from '@/lib/neighbourhoodColor'
+import { mediaProxyUrl } from '@/lib/media'
 
 export default async function DashboardPage() {
   const session = await getSession()
@@ -76,7 +77,7 @@ export default async function DashboardPage() {
               style={{ border: '1px solid var(--border)', background: '#fff' }}>
               <div className="w-16 h-14 rounded-xl overflow-hidden flex-shrink-0" style={{ background: 'var(--surface)' }}>
                 {p.photos?.[0]
-                  ? <img src={p.photos[0]} alt="" className="w-full h-full object-cover" />
+                  ? <img src={mediaProxyUrl(p.photos[0])} alt="" className="w-full h-full object-cover" />
                   : <div className="w-full h-full flex items-center justify-center text-xs" style={{ color: 'var(--muted)' }}>No photo</div>
                 }
               </div>

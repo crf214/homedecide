@@ -3,6 +3,7 @@ import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import { calcScore, scoreBg, CURRENCY_SYMBOLS } from '@/lib/scoring'
 import { getNeighbourhoodColor, neighbourhoodPillStyle } from '@/lib/neighbourhoodColor'
+import { mediaProxyUrl } from '@/lib/media'
 import Link from 'next/link'
 
 export default async function RankingsPage() {
@@ -81,7 +82,7 @@ export default async function RankingsPage() {
                 <div className="w-24 h-20 rounded-xl overflow-hidden flex-shrink-0"
                   style={{ background: 'var(--surface)' }}>
                   {p.photos?.[0]
-                    ? <img src={p.photos[0]} alt="" className="w-full h-full object-cover" />
+                    ? <img src={mediaProxyUrl(p.photos[0])} alt="" className="w-full h-full object-cover" />
                     : <div className="w-full h-full flex items-center justify-center text-xs" style={{ color: 'var(--muted)' }}>—</div>
                   }
                 </div>

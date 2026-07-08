@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { calcScore, scoreBg, CURRENCY_SYMBOLS } from '@/lib/scoring'
 import { getNeighbourhoodColor, neighbourhoodPillStyle } from '@/lib/neighbourhoodColor'
+import { mediaProxyUrl } from '@/lib/media'
 
 export default async function PropertiesPage() {
   const session = await getSession()
@@ -77,7 +78,7 @@ export default async function PropertiesPage() {
               {/* Photo */}
               <div className="h-40 relative" style={{ background: 'var(--surface)' }}>
                 {p.photos?.[0]
-                  ? <img src={p.photos[0]} alt="" className="w-full h-full object-cover" />
+                  ? <img src={mediaProxyUrl(p.photos[0])} alt="" className="w-full h-full object-cover" />
                   : <div className="w-full h-full flex items-center justify-center text-sm" style={{ color: 'var(--muted)' }}>No photos</div>
                 }
                 {p.isShared && (

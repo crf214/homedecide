@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import { mediaProxyUrl } from '@/lib/media'
 
 interface PropertyDocument {
   id: string
@@ -107,7 +108,7 @@ export default function DocumentsPanel({ propertyId }: { propertyId: string }) {
                 </div>
               </div>
               <a
-                href={doc.fileUrl}
+                href={mediaProxyUrl(doc.fileUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs px-3 py-1.5 rounded-lg flex-shrink-0"
